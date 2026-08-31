@@ -1,0 +1,24 @@
+# Build and runtime output
+bin/
+*.obj
+*.res
+*.log
+
+# Reverse-engineering evidence and local captures
+analysis/
+*.png
+*.dmp
+*.heapdump
+
+# IDE and operating-system files
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+Thumbs.db
+Desktop.ini
+
+# Keep the packaged release artifact only
+!dist/
+!dist/LunarUnlockUI.exe
