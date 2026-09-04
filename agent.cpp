@@ -16,8 +16,8 @@
 namespace {
 
 constexpr char kManagerSignature[] =
-    "Lcom/moonsworth/lunar/client/HIOHRIRIOIHOICCCCOHCOOIICIICOH/"
-    "OHOORCOHRORRIHROOCROOIIHHOOHRI/OIHRRCOOHRHIHICHRICIRIOCROHOCC;";
+    "Lcom/moonsworth/lunar/client/OIOIRCOOICRCIIOIRHOIOORCIOHORI/"
+    "RCIORCRRIROROHROCCOIIOHCHIICRC/HIIOHCCICCHRCHOROORICCRHIHOCOO;";
 constexpr char kLoginResponseSignature[] =
     "Lcom/lunarclient/websocket/cosmetic/v2/LoginResponse;";
 constexpr char kLoginResponseDescriptor[] =
@@ -25,53 +25,66 @@ constexpr char kLoginResponseDescriptor[] =
 constexpr char kLoginResponseBuilderDescriptor[] =
     "Lcom/lunarclient/websocket/cosmetic/v2/LoginResponse$Builder;";
 constexpr char kOwnedCosmeticDescriptor[] =
-    "Lcom/moonsworth/lunar/client/RROCOHOCHIHOIOIOROCORHRHRCIRHI/"
-    "RROHOCRCCHCIORHICIHCOHRIRCIHCI/COOCHIRORIICRCIIRIROHIIRIRICCH;";
+    "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
+    "HRCORCCCHOCRCICCRHOHHICOIIICII/RCRROIORHICCOHOIIIRROHIORIIIHC;";
 constexpr char kCatalogCosmeticDescriptor[] =
-    "Lcom/moonsworth/lunar/client/RROCOHOCHIHOIOIOROCORHRHRCIRHI/"
-    "RROHOCRCCHCIORHICIHCOHRIRCIHCI/RROHOCRCCHCIORHICIHCOHRIRCIHCI;";
+    "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
+    "HRCORCCCHOCRCICCRHOHHICOIIICII/HRCORCCCHOCRCICCRHOHHICOIIICII;";
 constexpr char kCosmeticTypeDescriptor[] =
-    "Lcom/moonsworth/lunar/client/RROCOHOCHIHOIOIOROCORHRHRCIRHI/"
-    "RROHOCRCCHCIORHICIHCOHRIRCIHCI/RORCICOHRIOIIIOIOHIIIICRCIHRII;";
+    "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
+    "HRCORCCCHOCRCICCRHOHHICOIIICII/RCRHHRIOICOORCIRCHOHHRHHIRRCRI;";
 constexpr char kItemMaterialDescriptor[] =
-    "Lcom/moonsworth/lunar/client/OCCHHCHCOICROCHHIOCRRIIORHIOOH/"
-    "COOCHIRORIICRCIIRIROHIIRIRICCH/COOCHIRORIICRCIIRIROHIIRIRICCH/"
-    "OIHRRCOOHRHIHICHRICIRIOCROHOCC;";
+    "Lcom/moonsworth/lunar/client/ORIHOIHRRIORROHIHHIIHOIHCCRHRI/"
+    "RCRROIORHICCOHOIIIRROHIORIIIHC/RCRROIORHICCOHOIIIRROHIORIIIHC/"
+    "HIIOHCCICCHRCHOROORICCRHIHOCOO;";
 constexpr char kOwnedMetadataDescriptor[] =
-    "Lcom/moonsworth/lunar/client/RROCOHOCHIHOIOIOROCORHRHRCIRHI/"
-    "RROHOCRCCHCIORHICIHCOHRIRCIHCI/OHRORRHCHCRICORRRCIRIOCCIRCRII;";
+    "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
+    "HRCORCCCHOCRCICCRHOHHICOIIICII/CIOCOHHRIIRCIROCHHICICRHICOHIH;";
 constexpr char kLocalCosmeticDescriptor[] =
-    "Lcom/moonsworth/lunar/client/RROCOHOCHIHOIOIOROCORHRHRCIRHI/"
-    "RROHOCRCCHCIORHICIHCOHRIRCIHCI/IRCROOHIIOOHIRCRRHOHIORHCOHIOR;";
+    "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
+    "HRCORCCCHOCRCICCRHOHHICOIIICII/COROIRIRHICROHCIOORRIOHCROCIHC;";
+constexpr char kEquippedCosmeticsGetter[] =
+    "IHCHCHIRHCHIRHRCHOICIRHHCROCOH";
+constexpr char kEquippedCosmeticsSetter[] =
+    "RRIORIHHCRRHCRCOCIRCOIIRICOCHH";
+constexpr char kClientUtilitySignature[] =
+    "Lcom/moonsworth/lunar/client/util/CHOCOICROCICIHCCRIIICHRCICORIH;";
+constexpr char kClientBridgeGetter[] =
+    "ROHRIICHRCORIHOICHICHIROORIIOI";
+constexpr char kPlayerCosmeticsGetter[] =
+    "RHCCHHCIHIRICHOICOHCCHCCICRCOO";
+constexpr char kPlayerCosmeticsMutation[] =
+    "HRCORCCCHOCRCICCRHOHHICOIIICII";
+constexpr char kLoadoutPreviewId[] = "TEST_PLAYER_DUMMY";
 
 constexpr char kEmoteManagerSignature[] =
-    "Lcom/moonsworth/lunar/client/HIOHRIRIOIHOICCCCOHCOOIICIICOH/"
-    "OHOORCOHRORRIHROOCROOIIHHOOHRI/COCCCORHOHRORRICOOHOCHOOCHHICR;";
+    "Lcom/moonsworth/lunar/client/OIOIRCOOICRCIIOIRHOIOORCIOHORI/"
+    "RCIORCRRIROROHROCCOIIOHCHIICRC/OORCHRCCHICCRHRORHIIOCIRHIIRII;";
 constexpr char kJamManagerSignature[] =
-    "Lcom/moonsworth/lunar/client/HIOHRIRIOIHOICCCCOHCOOIICIICOH/"
-    "COCCCORHOHRORRICOOHOCHOOCHHICR/RROHOCRCCHCIORHICIHCOHRIRCIHCI;";
+    "Lcom/moonsworth/lunar/client/OIOIRCOOICRCIIOIRHOIOORCIOHORI/"
+    "OORCHRCCHICCRHRORHIIOCIRHIIRII/HRCORCCCHOCRCICCRHOHHICOIIICII;";
 constexpr char kSprayManagerSignature[] =
-    "Lcom/moonsworth/lunar/client/HIOHRIRIOIHOICCCCOHCOOIICIICOH/"
-    "OHOORCOHRORRIHROOCROOIIHHOOHRI/HORCRCHHIRHRRHROOIOCRCICCICOCH;";
+    "Lcom/moonsworth/lunar/client/OIOIRCOOICRCIIOIRHOIOORCIOHORI/"
+    "RCIORCRRIROROHROCCOIIOHCHIICRC/IHICCORIHRHOHHHCHCICICCHIOIHCH;";
 constexpr char kBadgeManagerSignature[] =
-    "Lcom/moonsworth/lunar/client/HIOHRIRIOIHOICCCCOHCOOIICIICOH/"
-    "OHOORCOHRORRIHROOCROOIIHHOOHRI/OHRORRHCHCRICORRRCIRIOCCIRCRII;";
+    "Lcom/moonsworth/lunar/client/OIOIRCOOICRCIIOIRHOIOORCIOHORI/"
+    "RCIORCRRIROROHROCCOIIOHCHIICRC/CIOCOHHRIIRCIROCHHICICRHICOHIH;";
 constexpr char kLunarPlusManagerSignature[] =
-    "Lcom/moonsworth/lunar/client/HIOHRIRIOIHOICCCCOHCOOIICIICOH/"
-    "OHOORCOHRORRIHROOCROOIIHHOOHRI/HIOHRIRIOIHOICCCCOHCOOIICIICOH;";
+    "Lcom/moonsworth/lunar/client/OIOIRCOOICRCIIOIRHOIOORCIOHORI/"
+    "RCIORCRRIROROHROCCOIIOHCHIICRC/OIOIRCOOICRCIIOIRHOIOORCIOHORI;";
 
 constexpr char kEmoteOwnedWrapperSignature[] =
-    "Lcom/moonsworth/lunar/client/RROCOHOCHIHOIOIOROCORHRHRCIRHI/"
-    "RORCICOHRIOIIIOIOHIIIICRCIHRII/RORCICOHRIOIIIOIOHIIIICRCIHRII;";
+    "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
+    "RCRHHRIOICOORCIRCHOHHRHHIRRCRI/RCRHHRIOICOORCIRCHOHHRHHIRRCRI;";
 constexpr char kEmoteOwnedWrapperDescriptor[] =
-    "Lcom/moonsworth/lunar/client/RROCOHOCHIHOIOIOROCORHRHRCIRHI/"
-    "RORCICOHRIOIIIOIOHIIIICRCIHRII/RORCICOHRIOIIIOIOHIIIICRCIHRII;";
+    "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
+    "RCRHHRIOICOORCIRCHOHHRHHIRRCRI/RCRHHRIOICOORCIRCHOHHRHHIRRCRI;";
 constexpr char kEquippedEmoteWrapperSignature[] =
-    "Lcom/moonsworth/lunar/client/OHOORCOHRORRIHROOCROOIIHHOOHRI/"
-    "ORCOOOCHIICOIICCROCRCOOROORIHR;";
+    "Lcom/moonsworth/lunar/client/RCIORCRRIROROHROCCOIIOHCHIICRC/"
+    "IOHCCHIRRRIIIHORIROIORORIHIICO;";
 constexpr char kEmoteMetadataDescriptor[] =
-    "Lcom/moonsworth/lunar/client/RROCOHOCHIHOIOIOROCORHRHRCIRHI/"
-    "RROHOCRCCHCIORHICIHCOHRIRCIHCI/OHRORRHCHCRICORRRCIRIOCCIRCRII;";
+    "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
+    "HRCORCCCHOCRCICCRHOHHICOIIICII/CIOCOHHRIIRCIROCHHICICRHICOHIH;";
 
 constexpr char kOwnedJamSignature[] = "Lcom/lunarclient/websocket/jam/v1/OwnedJam;";
 constexpr char kOwnedJamDescriptor[] = "Lcom/lunarclient/websocket/jam/v1/OwnedJam;";
@@ -79,14 +92,14 @@ constexpr char kOwnedJamBuilderDescriptor[] =
     "Lcom/lunarclient/websocket/jam/v1/OwnedJam$Builder;";
 
 constexpr char kBadgeWrapperSignature[] =
-    "Lcom/moonsworth/lunar/client/RORCICOHRIOIIIOIOHIIIICRCIHRII/"
-    "RROHOCRCCHCIORHICIHCOHRIRCIHCI;";
+    "Lcom/moonsworth/lunar/client/RCRHHRIOICOORCIRCHOHHRHHIRRCRI/"
+    "HRCORCCCHOCRCICCRHOHHICOIIICII;";
 constexpr char kBadgeWrapperDescriptor[] =
-    "Lcom/moonsworth/lunar/client/RORCICOHRIOIIIOIOHIIIICRCIHRII/"
-    "RROHOCRCCHCIORHICIHCOHRIRCIHCI;";
+    "Lcom/moonsworth/lunar/client/RCRHHRIOICOORCIRCHOHHRHHIRRCRI/"
+    "HRCORCCCHOCRCICCRHOHHICOIIICII;";
 constexpr char kBadgeMetadataDescriptor[] =
-    "Lcom/moonsworth/lunar/client/RORCICOHRIOIIIOIOHIIIICRCIHRII/"
-    "COOCHIRORIICRCIIRIROHIIRIRICCH;";
+    "Lcom/moonsworth/lunar/client/RCRHHRIOICOORCIRCHOHHRHHIRRCRI/"
+    "RCRROIORHICCOHOIIIRROHIORIIIHC;";
 
 constexpr char kColorSignature[] = "Lcom/lunarclient/common/v1/Color;";
 constexpr char kColorDescriptor[] = "Lcom/lunarclient/common/v1/Color;";
@@ -98,6 +111,7 @@ constexpr char kEquippedSprayBuilderDescriptor[] =
 
 HMODULE g_module = nullptr;
 std::filesystem::path g_logPath;
+std::filesystem::path g_statusPath;
 std::filesystem::path g_selectionPath;
 std::mutex g_logMutex;
 std::atomic<unsigned long> g_tagSequence{1};
@@ -141,12 +155,29 @@ jclass g_persistentEquippedEmoteClass = nullptr;
 jobject g_persistentSprayManager = nullptr;
 jobject g_persistentLoginResponse = nullptr;
 jobject g_persistentPlayerCosmeticState = nullptr;
+jobject g_persistentLocalPlayerUuid = nullptr;
+bool g_localCosmeticSelectionInitialized = false;
+int g_playerStateWaitReason = 0;
 
 void logLine(const std::string& line) {
     std::lock_guard<std::mutex> guard(g_logMutex);
     std::ofstream output(g_logPath, std::ios::app);
     if (output) output << line << '\n';
     OutputDebugStringA(("[lunar_unlock_agent] " + line + "\n").c_str());
+}
+
+void writeStatus(const std::string& status) {
+    if (g_statusPath.empty()) return;
+    const std::filesystem::path temporary = g_statusPath.wstring() + L".tmp";
+    {
+        std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
+        if (!output) return;
+        output << status << '\n';
+        output.flush();
+        if (!output.good()) return;
+    }
+    MoveFileExW(temporary.c_str(), g_statusPath.c_str(),
+                MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH);
 }
 
 void initializeSelectionPath() {
@@ -427,6 +458,72 @@ jobject invokeNoArgReflective(JNIEnv* env, jobject target, const char* wantedNam
     return result;
 }
 
+jobject invokeStaticNoArgReflective(JNIEnv* env, jclass targetClass,
+                                    const char* wantedName,
+                                    const char* location) {
+    if (!targetClass || !wantedName) return nullptr;
+
+    jclass classClass = env->FindClass("java/lang/Class");
+    jclass methodClass = env->FindClass("java/lang/reflect/Method");
+    if (clearException(env, "static reflect helper classes") ||
+        !classClass || !methodClass) {
+        if (classClass) env->DeleteLocalRef(classClass);
+        if (methodClass) env->DeleteLocalRef(methodClass);
+        return nullptr;
+    }
+
+    jmethodID getMethods = env->GetMethodID(
+        classClass, "getMethods", "()[Ljava/lang/reflect/Method;");
+    jmethodID methodName = env->GetMethodID(
+        methodClass, "getName", "()Ljava/lang/String;");
+    jmethodID getParameterTypes = env->GetMethodID(
+        methodClass, "getParameterTypes", "()[Ljava/lang/Class;");
+    jmethodID invoke = env->GetMethodID(
+        methodClass, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+    if (clearException(env, "static reflect helper methods") ||
+        !getMethods || !methodName || !getParameterTypes || !invoke) {
+        env->DeleteLocalRef(classClass);
+        env->DeleteLocalRef(methodClass);
+        return nullptr;
+    }
+
+    jobject methods = env->CallObjectMethod(targetClass, getMethods);
+    if (clearException(env, location) || !methods) {
+        if (methods) env->DeleteLocalRef(methods);
+        env->DeleteLocalRef(classClass);
+        env->DeleteLocalRef(methodClass);
+        return nullptr;
+    }
+
+    jobject result = nullptr;
+    const jsize methodCount = env->GetArrayLength(static_cast<jarray>(methods));
+    for (jsize i = 0; i < methodCount && !result; ++i) {
+        if (env->PushLocalFrame(12) != JNI_OK) break;
+        jobject method = env->GetObjectArrayElement(
+            static_cast<jobjectArray>(methods), i);
+        jstring name = method
+            ? static_cast<jstring>(env->CallObjectMethod(method, methodName)) : nullptr;
+        jobject parameterTypes = method
+            ? env->CallObjectMethod(method, getParameterTypes) : nullptr;
+        const std::string nameUtf8 = jstringToUtf8(env, name);
+        const jsize parameterCount = parameterTypes
+            ? env->GetArrayLength(static_cast<jarray>(parameterTypes)) : -1;
+        jobject frameResult = nullptr;
+        if (!clearException(env, location) && nameUtf8 == wantedName &&
+            parameterCount == 0) {
+            jobject value = env->CallObjectMethod(
+                method, invoke, nullptr, nullptr);
+            if (!clearException(env, location) && value) frameResult = value;
+        }
+        result = env->PopLocalFrame(frameResult);
+    }
+
+    env->DeleteLocalRef(methods);
+    env->DeleteLocalRef(classClass);
+    env->DeleteLocalRef(methodClass);
+    return result;
+}
+
 std::optional<jlong> invokeLongNoArgReflective(JNIEnv* env, jobject target,
                                                 const char* wantedName,
                                                 const char* location) {
@@ -555,11 +652,11 @@ ManagerState inspectManager(JNIEnv* env, jobject manager) {
     }
 
     jmethodID catalogAccessor = env->GetMethodID(
-        managerClass, "IRRRHICIORORRRORRIOIHIORIHCOIH", "()Ljava/util/Map;");
+        managerClass, "HCOCCIOOROHIHHRHCCHHRROIOOOHRO", "()Ljava/util/Map;");
     jmethodID ownedAccessor = env->GetMethodID(
-        managerClass, "OHCHOCIROCIRRIIHHHOOIRCCIIRORO", "()Ljava/util/Set;");
+        managerClass, "IOOCHIHIHRRIRORHHRHOIORORCIHCR", "()Ljava/util/Set;");
     jmethodID serialAccessor = env->GetMethodID(
-        managerClass, "RIHCRCROCIHOCHHCOIIOHHOHICHHCO", "()Ljava/util/Map;");
+        managerClass, "OCORRRRRHRHIIORIRCIORIIOOHRORR", "()Ljava/util/Map;");
     if (clearException(env, "manager accessors") ||
         !catalogAccessor || !ownedAccessor || !serialAccessor) {
         env->DeleteLocalRef(managerClass);
@@ -579,6 +676,37 @@ ManagerState inspectManager(JNIEnv* env, jobject manager) {
     if (ownedBySerial) env->DeleteLocalRef(ownedBySerial);
     env->DeleteLocalRef(managerClass);
     return state;
+}
+
+// The client can recreate its cosmetic manager after a profile refresh or
+// when the Locker screen is opened. Keep the persistent reference attached to
+// the live manager instead of polling an object that has gone stale.
+bool refreshPersistentCosmeticManager(JNIEnv* env, jvmtiEnv* jvmti) {
+    if (!jvmti) return false;
+    jclass managerClass = findLoadedClass(env, jvmti, kManagerSignature);
+    if (!managerClass) return false;
+    std::vector<jobject> managers = findInstances(env, jvmti, managerClass);
+    ManagerState selected;
+    for (jobject manager : managers) {
+        ManagerState current = inspectManager(env, manager);
+        if (current.catalog > selected.catalog) selected = current;
+    }
+
+    bool rebound = false;
+    if (selected.manager && selected.catalog > 0 &&
+        (!g_persistentCosmeticManager ||
+         env->IsSameObject(g_persistentCosmeticManager, selected.manager) != JNI_TRUE)) {
+        replaceGlobalRef(env, g_persistentCosmeticManager, selected.manager);
+        rebound = g_persistentCosmeticManager != nullptr;
+        if (rebound) {
+            logLine("COSMETIC_MANAGER_REBOUND catalog=" +
+                    std::to_string(selected.catalog) +
+                    " owned=" + std::to_string(selected.owned));
+        }
+    }
+    for (jobject manager : managers) env->DeleteLocalRef(manager);
+    env->DeleteLocalRef(managerClass);
+    return rebound;
 }
 
 struct ResponseCandidate {
@@ -653,7 +781,7 @@ bool applyUnlock(JNIEnv* env, jobject manager, jclass responseClass, jobject res
     const std::string handlerDescriptor =
         std::string("(") + kLoginResponseDescriptor + ")V";
     jmethodID handler = managerClass
-        ? env->GetMethodID(managerClass, "RROHOCRCCHCIORHICIHCOHRIRCIHCI",
+        ? env->GetMethodID(managerClass, "HRCORCCCHOCRCICCRHOHHICOIIICII",
                            handlerDescriptor.c_str())
         : nullptr;
     if (clearException(env, "manager login handler") || !handler) {
@@ -681,17 +809,17 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
     }
 
     jmethodID catalogAccessor = env->GetMethodID(
-        managerClass, "IRRRHICIORORRRORRIOIHIORIHCOIH", "()Ljava/util/Map;");
+        managerClass, "HCOCCIOOROHIHHRHCCHHRROIOOOHRO", "()Ljava/util/Map;");
     jmethodID ownedAccessor = env->GetMethodID(
-        managerClass, "OHCHOCIROCIRRIIHHHOOIRCCIIRORO", "()Ljava/util/Set;");
+        managerClass, "IOOCHIHIHRRIRORHHRHOIORORCIHCR", "()Ljava/util/Set;");
     jmethodID serialAccessor = env->GetMethodID(
-        managerClass, "RIHCRCROCIHOCHHCOIIOHHOHICHHCO", "()Ljava/util/Map;");
+        managerClass, "OCORRRRRHRHIIORIRCIORIIOOHRORR", "()Ljava/util/Map;");
     const std::string factoryDescriptor =
         std::string("(ILjava/lang/String;") + kCosmeticTypeDescriptor +
         "Ljava/lang/String;ZJLjava/time/Instant;Ljava/util/List;Ljava/util/List;Z" +
         kItemMaterialDescriptor + kOwnedMetadataDescriptor + ")" + kOwnedCosmeticDescriptor;
     jmethodID factory = env->GetMethodID(
-        managerClass, "COOCHIRORIICRCIIRIROHIIRIRICCH", factoryDescriptor.c_str());
+        managerClass, "RCRROIORHICCOHOIIIRROHIORIIIHC", factoryDescriptor.c_str());
     if (clearException(env, "direct manager methods") ||
         !catalogAccessor || !ownedAccessor || !serialAccessor || !factory) {
         env->DeleteLocalRef(managerClass);
@@ -814,19 +942,19 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
             getId = env->GetMethodID(catalogClass, "getId", "()I");
             getName = env->GetMethodID(catalogClass, "getName", "()Ljava/lang/String;");
             getType = env->GetMethodID(
-                catalogClass, "RCCCIIHHHRCIHIHIOCORCOCRICOCCC", "()Ljava/util/Optional;");
+                catalogClass, "IHCIHHCIOROIHRIORCIRHRHICHRORO", "()Ljava/util/Optional;");
             getVariant = env->GetMethodID(
-                catalogClass, "RRCHRIRHORICHRHRHRCHOIOICCHCCC", "()Ljava/lang/String;");
+                catalogClass, "COOOCICROIRHRCHCCHHHRHCRHOHHOI", "()Ljava/lang/String;");
             getHidden = env->GetMethodID(
-                catalogClass, "IHCRCCCIHCRCCRHRRIOIOHOHORHHRO", "()Z");
+                catalogClass, "CIOROHCHHHHICORRHRIOCCCRCRHRIR", "()Z");
             getTags = env->GetMethodID(
-                catalogClass, "HRRRHOIHCCOIIRRIRHIICIRHHCHIOC", "()Ljava/util/List;");
+                catalogClass, "RRHCHCCIRHRRROHOROHIRHRHIOHCHH", "()Ljava/util/List;");
             getColors = env->GetMethodID(catalogClass, "getColors", "()Ljava/util/List;");
             getAnimated = env->GetMethodID(
-                catalogClass, "ORRHHHHOCIRRCOIRIORCOOCRRIIIHI", "()Z");
+                catalogClass, "OCROCHROOCCOCOHOICHIHHORIIHROR", "()Z");
             const std::string materialGetter = std::string("()") + kItemMaterialDescriptor;
             getMaterial = env->GetMethodID(
-                catalogClass, "RRRICCCIRRRHIROCOHCRORORCOCRRC", materialGetter.c_str());
+                catalogClass, "COOOHHHHHOOCCIIOOICHIOIHOOHRIR", materialGetter.c_str());
             if (clearException(env, "catalog item methods") ||
                 !getId || !getName || !getType || !getVariant || !getHidden ||
                 !getTags || !getColors || !getAnimated || !getMaterial) {
@@ -878,7 +1006,7 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
         if (!ownedClass) {
             ownedClass = static_cast<jclass>(env->NewGlobalRef(env->GetObjectClass(owned)));
             getSerial = env->GetMethodID(
-                ownedClass, "OCRIOHIIOCCCHOOCIRORIRHIRRCHCH", "()J");
+                ownedClass, "HRHCIHHIIIRCICOICIICHIHCIRRHII", "()J");
             if (clearException(env, "owned serial method") || !getSerial) {
                 env->PopLocalFrame(nullptr);
                 failed = true;
@@ -951,47 +1079,155 @@ jobject firstInstance(JNIEnv* env, jvmtiEnv* jvmti, jclass klass) {
     return instances.empty() ? nullptr : instances.front();
 }
 
+bool bindLocalPlayerUuid(JNIEnv* env, jvmtiEnv* jvmti, bool force = false) {
+    if (g_persistentLocalPlayerUuid && !force) return true;
 
-bool bindPlayerCosmeticState(JNIEnv* env, jvmtiEnv* jvmti) {
-    if (g_persistentPlayerCosmeticState) return true;
+    jclass utilityClass = findLoadedClass(env, jvmti, kClientUtilitySignature);
+    if (!utilityClass) return false;
+    jobject bridge = invokeStaticNoArgReflective(
+        env, utilityClass, kClientBridgeGetter, "local player bridge");
+    jobject session = bridge
+        ? invokeNoArgReflective(env, bridge, "bridge$getSession", "local player session")
+        : nullptr;
+    jobject profile = session
+        ? invokeNoArgReflective(env, session, "bridge$getProfile", "local player profile")
+        : nullptr;
+    jobject uuid = profile
+        ? invokeNoArgReflective(env, profile, "getId", "local player UUID")
+        : nullptr;
+
+    bool changed = false;
+    if (uuid) {
+        if (!g_persistentLocalPlayerUuid) {
+            changed = true;
+        } else {
+            jclass uuidClass = env->GetObjectClass(uuid);
+            jmethodID equals = uuidClass
+                ? env->GetMethodID(uuidClass, "equals", "(Ljava/lang/Object;)Z") : nullptr;
+            const jboolean same = equals
+                ? env->CallBooleanMethod(uuid, equals, g_persistentLocalPlayerUuid)
+                : JNI_FALSE;
+            if (clearException(env, "local player UUID compare") || same != JNI_TRUE) {
+                changed = true;
+            }
+            if (uuidClass) env->DeleteLocalRef(uuidClass);
+        }
+        if (changed) {
+            replaceGlobalRef(env, g_persistentLocalPlayerUuid, uuid);
+            jobject text = invokeNoArgReflective(
+                env, uuid, "toString", "local player UUID text");
+            logLine("LOCAL_PLAYER_UUID_BOUND value=" +
+                    jstringToUtf8(env, static_cast<jstring>(text)));
+            if (text) env->DeleteLocalRef(text);
+            g_localCosmeticSelectionInitialized = false;
+        }
+    }
+
+    if (uuid) env->DeleteLocalRef(uuid);
+    if (profile) env->DeleteLocalRef(profile);
+    if (session) env->DeleteLocalRef(session);
+    if (bridge) env->DeleteLocalRef(bridge);
+    env->DeleteLocalRef(utilityClass);
+    return g_persistentLocalPlayerUuid != nullptr;
+}
+
+
+bool bindPlayerCosmeticState(JNIEnv* env, jvmtiEnv* jvmti, bool force = false) {
+    if (g_persistentPlayerCosmeticState && !force) return true;
+
+    jobject previousState = g_persistentPlayerCosmeticState;
     constexpr char kPlayerStateSignature[] =
-        "Lcom/moonsworth/lunar/client/OHOORCCRHHHHROIICHOCRHOCRICROH/"
-        "RROHOCRCCHCIORHICIHCOHRIRCIHCI/OHOORCOHRORRIHROOCROOIIHHOOHRI/"
-        "RROHOCRCCHCIORHICIHCOHRIRCIHCI/COOCHIRORIICRCIIRIROHIIRIRICCH;";
+        "Lcom/moonsworth/lunar/client/OORRRCCHICOCHRIIHHCCHIOHHRICCO/"
+        "HRCORCCCHOCRCICCRHOHHICOIIICII/RCIORCRRIROROHROCCOIIOHCHIICRC/"
+        "HRCORCCCHOCRCICCRHOHHICOIIICII/RCRROIORHICCOHOIIIRROHIORIIIHC;";
     jclass stateClass = findLoadedClass(env, jvmti, kPlayerStateSignature);
-    if (!stateClass) return false;
+    if (!stateClass) {
+        if (g_playerStateWaitReason != 1) {
+            logLine("PLAYER_COSMETIC_STATE_WAITING reason=CLASS_NOT_LOADED");
+            g_playerStateWaitReason = 1;
+        }
+        return false;
+    }
     std::vector<jobject> states = findInstances(env, jvmti, stateClass);
     if (states.empty()) {
+        if (g_playerStateWaitReason != 2) {
+            logLine("PLAYER_COSMETIC_STATE_WAITING reason=INSTANCE_NOT_FOUND");
+            g_playerStateWaitReason = 2;
+        }
         env->DeleteLocalRef(stateClass);
         return false;
     }
-    // In the 1.8.9 client the local player state is created first.  Prefer a
-    // state with a non-empty cosmetic list when several remote states exist.
-    jobject selected = states.front();
+
+    jmethodID getId = env->GetMethodID(
+        stateClass, "getId", "()Ljava/lang/String;");
+    jmethodID isInitialized = env->GetMethodID(
+        stateClass, "isInitialized", "()Z");
+    if (clearException(env, "loadout preview identity methods") ||
+        !getId || !isInitialized) {
+        for (jobject state : states) env->DeleteLocalRef(state);
+        env->DeleteLocalRef(stateClass);
+        return false;
+    }
+
+    jobject selected = nullptr;
     jint selectedSize = -1;
+    size_t matchingIds = 0;
     for (jobject state : states) {
-        jobject cosmetics = invokeNoArgReflective(
-            env, state, "RRRIRRICOOHRIIOOIOCHCIIIIRHIIR", "player state bind list");
-        const jint size = collectionSize(env, cosmetics);
-        if (size > selectedSize) {
-            selected = state;
-            selectedSize = size;
+        jstring id = static_cast<jstring>(env->CallObjectMethod(state, getId));
+        const jboolean initialized = env->CallBooleanMethod(state, isInitialized);
+        if (clearException(env, "loadout preview identity")) {
+            if (id) env->DeleteLocalRef(id);
+            continue;
         }
+        const bool idMatches = jstringToUtf8(env, id) == kLoadoutPreviewId;
+        if (id) env->DeleteLocalRef(id);
+        if (!idMatches) continue;
+        ++matchingIds;
+        if (initialized != JNI_TRUE) continue;
+
+        jobject cosmetics = invokeNoArgReflective(
+            env, state, "RIROHRRHOHOCRHRRICIHIIROCCHHIH",
+            "loadout preview bind list");
+        selected = state;
+        selectedSize = collectionSize(env, cosmetics);
         if (cosmetics) env->DeleteLocalRef(cosmetics);
     }
+
+    if (!selected) {
+        if (g_playerStateWaitReason != 3) {
+            logLine("LOADOUT_PREVIEW_WAITING reason=ACTIVE_MODEL_NOT_FOUND" +
+                    std::string(" candidates=") + std::to_string(states.size()) +
+                    " matching_ids=" + std::to_string(matchingIds));
+            g_playerStateWaitReason = 3;
+        }
+        for (jobject state : states) env->DeleteLocalRef(state);
+        env->DeleteLocalRef(stateClass);
+        return false;
+    }
+
+    const bool instanceChanged = !previousState ||
+        !env->IsSameObject(previousState, selected);
+
     replaceGlobalRef(env, g_persistentPlayerCosmeticState, selected);
-    logLine("PLAYER_COSMETIC_STATE_BOUND size=" + std::to_string(selectedSize));
+    g_playerStateWaitReason = 0;
+
+    if (instanceChanged) {
+        logLine("LOADOUT_PREVIEW_BOUND id=" + std::string(kLoadoutPreviewId) +
+                " size=" + std::to_string(selectedSize) +
+                " candidates=" + std::to_string(states.size()) +
+                " matching_ids=" + std::to_string(matchingIds));
+    }
+
     for (jobject state : states) env->DeleteLocalRef(state);
     env->DeleteLocalRef(stateClass);
-    return g_persistentPlayerCosmeticState != nullptr;
+    return force ? instanceChanged : true;
 }
 
-bool capturePlayerCosmeticSelection(JNIEnv* env, jobject state,
-                                    std::set<jlong>& selection) {
+bool captureCosmeticListSelection(JNIEnv* env, jobject equipped,
+                                  std::set<jlong>& selection,
+                                  const char* location) {
     selection.clear();
-    if (!state) return false;
-    jobject equipped = invokeNoArgReflective(
-        env, state, "RRRIRRICOOHRIIOOIOCHCIIIIRHIIR", "player selection list");
+    if (!equipped) return false;
     jclass collectionClass = env->FindClass("java/util/Collection");
     jclass iteratorClass = env->FindClass("java/util/Iterator");
     jmethodID iteratorMethod = collectionClass
@@ -1000,15 +1236,14 @@ bool capturePlayerCosmeticSelection(JNIEnv* env, jobject state,
         ? env->GetMethodID(iteratorClass, "hasNext", "()Z") : nullptr;
     jmethodID next = iteratorClass
         ? env->GetMethodID(iteratorClass, "next", "()Ljava/lang/Object;") : nullptr;
-    if (clearException(env, "player selection roots") || !equipped ||
-        !collectionClass || !iteratorClass || !iteratorMethod || !hasNext || !next) {
-        if (equipped) env->DeleteLocalRef(equipped);
+    if (clearException(env, location) || !collectionClass || !iteratorClass ||
+        !iteratorMethod || !hasNext || !next) {
         if (collectionClass) env->DeleteLocalRef(collectionClass);
         if (iteratorClass) env->DeleteLocalRef(iteratorClass);
         return false;
     }
     jobject cursor = env->CallObjectMethod(equipped, iteratorMethod);
-    bool failed = clearException(env, "player selection iterator") || !cursor;
+    bool failed = clearException(env, location) || !cursor;
     while (!failed && env->CallBooleanMethod(cursor, hasNext) == JNI_TRUE) {
         if (env->PushLocalFrame(16) != JNI_OK) {
             failed = true;
@@ -1016,31 +1251,66 @@ bool capturePlayerCosmeticSelection(JNIEnv* env, jobject state,
         }
         jobject wrapper = env->CallObjectMethod(cursor, next);
         jobject owned = wrapper
-            ? invokeNoArgReflective(env, wrapper, "IOIRCCICHROHOIHRCORROCRHRRIHCH",
-                                    "player selection owned") : nullptr;
+            ? invokeNoArgReflective(env, wrapper, "HCOIRRCCICHHCOOIIIRHHIRCRCHCHR",
+                                    location) : nullptr;
         const auto id = invokeLongNoArgReflective(
             env, owned ? owned : wrapper,
-            "OCRIOHIIOCCCHOOCIRORIRHIRRCHCH", "player selection id");
-        if (clearException(env, "player selection item")) {
+            "HRHCIHHIIIRCICOICIICHIHCIRRHII", location);
+        if (clearException(env, location)) {
             failed = true;
         } else if (id.has_value() && id.value() >= 0) {
             selection.insert(id.value());
         }
         env->PopLocalFrame(nullptr);
     }
-    if (!failed && clearException(env, "player selection completion")) failed = true;
+    if (!failed && clearException(env, location)) failed = true;
     if (cursor) env->DeleteLocalRef(cursor);
-    env->DeleteLocalRef(equipped);
     env->DeleteLocalRef(collectionClass);
     env->DeleteLocalRef(iteratorClass);
     return !failed;
+}
+
+bool capturePlayerCosmeticSelection(JNIEnv* env, jobject state,
+                                    std::set<jlong>& selection) {
+    if (!state) return false;
+    jobject equipped = invokeNoArgReflective(
+        env, state, "RIROHRRHOHOCRHRRICIHIIROCCHHIH", "preview selection list");
+    const bool captured = captureCosmeticListSelection(
+        env, equipped, selection, "preview selection capture");
+    if (equipped) env->DeleteLocalRef(equipped);
+    return captured;
+}
+
+bool captureLocalPlayerCosmeticSelection(JNIEnv* env, jobject manager,
+                                         std::set<jlong>& selection) {
+    selection.clear();
+    if (!manager || !g_persistentLocalPlayerUuid) return false;
+    jclass managerClass = env->GetObjectClass(manager);
+    jmethodID getPlayerCosmetics = managerClass ? env->GetMethodID(
+        managerClass, kPlayerCosmeticsGetter,
+        "(Ljava/util/UUID;)Ljava/util/List;") : nullptr;
+    jobject equipped = getPlayerCosmetics
+        ? env->CallObjectMethod(manager, getPlayerCosmetics,
+                                g_persistentLocalPlayerUuid)
+        : nullptr;
+    if (clearException(env, "local player cosmetic list") ||
+        !managerClass || !getPlayerCosmetics || !equipped) {
+        if (equipped) env->DeleteLocalRef(equipped);
+        if (managerClass) env->DeleteLocalRef(managerClass);
+        return false;
+    }
+    const bool captured = captureCosmeticListSelection(
+        env, equipped, selection, "local player selection capture");
+    env->DeleteLocalRef(equipped);
+    env->DeleteLocalRef(managerClass);
+    return captured;
 }
 
 bool restorePlayerCosmeticSelection(JNIEnv* env, jobject manager, jobject state,
                                     const std::set<jlong>& selection) {
     if (!manager || !state) return false;
     jobject equipped = invokeNoArgReflective(
-        env, state, "RRRIRRICOOHRIIOOIOCHCIIIIRHIIR", "player restore list");
+        env, state, "RIROHRRHOHOCRHRRICIHIIROCCHHIH", "player restore list");
     jclass collectionClass = env->FindClass("java/util/Collection");
     jclass managerClass = env->GetObjectClass(manager);
     jmethodID clear = collectionClass
@@ -1048,7 +1318,7 @@ bool restorePlayerCosmeticSelection(JNIEnv* env, jobject manager, jobject state,
     jmethodID add = collectionClass
         ? env->GetMethodID(collectionClass, "add", "(Ljava/lang/Object;)Z") : nullptr;
     jmethodID factory = managerClass
-        ? env->GetMethodID(managerClass, "IRCCRCOOHRIHOOCRRHIHCIHRRCHHHO",
+        ? env->GetMethodID(managerClass, "HCIICHICRRHHOHHICRRCCOHHHROHCI",
                            (std::string("(J)") + kLocalCosmeticDescriptor).c_str()) : nullptr;
     if (clearException(env, "player restore roots") || !equipped || !collectionClass ||
         !managerClass || !clear || !add || !factory) {
@@ -1076,7 +1346,7 @@ bool restorePlayerCosmeticSelection(JNIEnv* env, jobject manager, jobject state,
     }
     // Rebuild the manager's derived render JSON after replacing the list.
     jmethodID rebuild = env->GetMethodID(
-        managerClass, "CORHICICCROHRHCOOCORRCOOCRRICO", "()V");
+        managerClass, "OHORROHOIHICOICRROCHOOCCIOCOHI", "()V");
     if (rebuild) env->CallVoidMethod(manager, rebuild);
     const bool failed = clearException(env, "player restore rebuild");
     logLine("PLAYER_COSMETIC_SELECTION_RESTORE requested=" + std::to_string(selection.size()) +
@@ -1088,115 +1358,226 @@ bool restorePlayerCosmeticSelection(JNIEnv* env, jobject manager, jobject state,
     return !failed && matched == selection.size();
 }
 
-bool captureCosmeticSelection(JNIEnv* env, jobject manager, std::set<jlong>& selection) {
+bool restoreLocalPlayerCosmeticSelection(JNIEnv* env, jobject manager,
+                                         const std::set<jlong>& selection) {
+    if (!manager || !g_persistentLocalPlayerUuid) return false;
+
+    std::set<jlong> current;
+    if (!captureLocalPlayerCosmeticSelection(env, manager, current)) return false;
+
+    jclass managerClass = env->GetObjectClass(manager);
+    jclass arrayListClass = env->FindClass("java/util/ArrayList");
+    jclass collectionClass = env->FindClass("java/util/Collection");
+    jclass integerClass = env->FindClass("java/lang/Integer");
+    jclass hashMapClass = env->FindClass("java/util/HashMap");
+    jmethodID listConstructor = arrayListClass
+        ? env->GetMethodID(arrayListClass, "<init>", "()V") : nullptr;
+    jmethodID mapConstructor = hashMapClass
+        ? env->GetMethodID(hashMapClass, "<init>", "()V") : nullptr;
+    jmethodID addToList = collectionClass
+        ? env->GetMethodID(collectionClass, "add", "(Ljava/lang/Object;)Z") : nullptr;
+    jmethodID valueOf = integerClass
+        ? env->GetStaticMethodID(integerClass, "valueOf", "(I)Ljava/lang/Integer;") : nullptr;
+    jmethodID addCosmetics = managerClass ? env->GetMethodID(
+        managerClass, kPlayerCosmeticsMutation,
+        "(Ljava/util/UUID;Ljava/util/List;Ljava/util/Map;)V") : nullptr;
+    jmethodID removeCosmetics = managerClass ? env->GetMethodID(
+        managerClass, kPlayerCosmeticsMutation,
+        "(Ljava/util/UUID;Ljava/util/List;)V") : nullptr;
+    if (clearException(env, "local player restore roots") || !managerClass ||
+        !arrayListClass || !collectionClass || !integerClass || !hashMapClass ||
+        !listConstructor || !mapConstructor || !addToList || !valueOf ||
+        !addCosmetics || !removeCosmetics) {
+        if (managerClass) env->DeleteLocalRef(managerClass);
+        if (arrayListClass) env->DeleteLocalRef(arrayListClass);
+        if (collectionClass) env->DeleteLocalRef(collectionClass);
+        if (integerClass) env->DeleteLocalRef(integerClass);
+        if (hashMapClass) env->DeleteLocalRef(hashMapClass);
+        return false;
+    }
+
+    jobject removeIds = env->NewObject(arrayListClass, listConstructor);
+    jobject addIds = env->NewObject(arrayListClass, listConstructor);
+    jobject metadata = env->NewObject(hashMapClass, mapConstructor);
+    bool failed = clearException(env, "local player restore staging") ||
+        !removeIds || !addIds || !metadata;
+
+    auto appendIds = [&](jobject target, const std::set<jlong>& ids) {
+        for (const jlong id : ids) {
+            if (id < 0 || id > INT_MAX) {
+                failed = true;
+                continue;
+            }
+            jobject boxed = env->CallStaticObjectMethod(
+                integerClass, valueOf, static_cast<jint>(id));
+            if (!boxed || clearException(env, "local player restore ID")) {
+                failed = true;
+            } else {
+                env->CallBooleanMethod(target, addToList, boxed);
+                if (clearException(env, "local player restore list add")) failed = true;
+            }
+            if (boxed) env->DeleteLocalRef(boxed);
+        }
+    };
+    if (!failed) {
+        appendIds(removeIds, current);
+        appendIds(addIds, selection);
+    }
+
+    if (!failed && !current.empty()) {
+        env->CallVoidMethod(manager, removeCosmetics,
+                            g_persistentLocalPlayerUuid, removeIds);
+        if (clearException(env, "local player remove cosmetics")) failed = true;
+    }
+    if (!failed && !selection.empty()) {
+        env->CallVoidMethod(manager, addCosmetics,
+                            g_persistentLocalPlayerUuid, addIds, metadata);
+        if (clearException(env, "local player add cosmetics")) failed = true;
+    }
+
+    std::set<jlong> verified;
+    const bool captured = !failed &&
+        captureLocalPlayerCosmeticSelection(env, manager, verified);
+    const bool valid = captured && verified == selection;
+    logLine("LOCAL_PLAYER_SELECTION_RESTORE requested=" +
+            std::to_string(selection.size()) +
+            " before=" + std::to_string(current.size()) +
+            " verified=" + std::to_string(verified.size()) +
+            " valid=" + std::to_string(valid));
+
+    if (removeIds) env->DeleteLocalRef(removeIds);
+    if (addIds) env->DeleteLocalRef(addIds);
+    if (metadata) env->DeleteLocalRef(metadata);
+    env->DeleteLocalRef(managerClass);
+    env->DeleteLocalRef(arrayListClass);
+    env->DeleteLocalRef(collectionClass);
+    env->DeleteLocalRef(integerClass);
+    env->DeleteLocalRef(hashMapClass);
+    return valid;
+}
+
+bool captureManagerCosmeticSelection(JNIEnv* env, jobject manager,
+                                     std::set<jlong>& selection) {
     selection.clear();
     if (!manager) return false;
     jclass managerClass = env->GetObjectClass(manager);
-    jmethodID ownedAccessor = managerClass ? env->GetMethodID(
-        managerClass, "OHCHOCIROCIRRIIHHHOOIRCCIIRORO", "()Ljava/util/Set;") : nullptr;
-    jobject owned = ownedAccessor ? env->CallObjectMethod(manager, ownedAccessor) : nullptr;
+    jmethodID getEquipped = managerClass ? env->GetMethodID(
+        managerClass, kEquippedCosmeticsGetter, "()Ljava/util/List;") : nullptr;
+    jobject equipped = getEquipped ? env->CallObjectMethod(manager, getEquipped) : nullptr;
     jclass collectionClass = env->FindClass("java/util/Collection");
     jclass iteratorClass = env->FindClass("java/util/Iterator");
+    jclass integerClass = env->FindClass("java/lang/Integer");
     jmethodID iteratorMethod = collectionClass
         ? env->GetMethodID(collectionClass, "iterator", "()Ljava/util/Iterator;") : nullptr;
     jmethodID hasNext = iteratorClass ? env->GetMethodID(iteratorClass, "hasNext", "()Z") : nullptr;
     jmethodID next = iteratorClass
         ? env->GetMethodID(iteratorClass, "next", "()Ljava/lang/Object;") : nullptr;
-    if (clearException(env, "cosmetic selection roots") || !managerClass || !owned ||
-        !collectionClass || !iteratorClass || !iteratorMethod || !hasNext || !next) {
+    jmethodID intValue = integerClass
+        ? env->GetMethodID(integerClass, "intValue", "()I") : nullptr;
+    if (clearException(env, "manager cosmetic selection roots") || !managerClass ||
+        !equipped || !collectionClass || !iteratorClass || !integerClass ||
+        !iteratorMethod || !hasNext || !next || !intValue) {
         if (managerClass) env->DeleteLocalRef(managerClass);
-        if (owned) env->DeleteLocalRef(owned);
+        if (equipped) env->DeleteLocalRef(equipped);
+        if (collectionClass) env->DeleteLocalRef(collectionClass);
+        if (iteratorClass) env->DeleteLocalRef(iteratorClass);
+        if (integerClass) env->DeleteLocalRef(integerClass);
         return false;
     }
 
-    jobject cursor = env->CallObjectMethod(owned, iteratorMethod);
-    bool failed = clearException(env, "cosmetic selection iterator") || !cursor;
+    jobject cursor = env->CallObjectMethod(equipped, iteratorMethod);
+    bool failed = clearException(env, "manager cosmetic selection iterator") || !cursor;
     while (!failed && env->CallBooleanMethod(cursor, hasNext) == JNI_TRUE) {
-        if (env->PushLocalFrame(12) != JNI_OK) {
+        if (env->PushLocalFrame(8) != JNI_OK) {
             failed = true;
             break;
         }
-        jobject item = env->CallObjectMethod(cursor, next);
-        jclass itemClass = item ? env->GetObjectClass(item) : nullptr;
-        jmethodID active = itemClass
-            ? env->GetMethodID(itemClass, "CIHHOHHROOCCHHRRCRORCHCOOHCHIH", "()Z") : nullptr;
-        jmethodID id = itemClass
-            ? env->GetMethodID(itemClass, "OCRIOHIIOCCCHOOCIRORIRHIRRCHCH", "()J") : nullptr;
-        const jboolean isActive = (item && active)
-            ? env->CallBooleanMethod(item, active) : JNI_FALSE;
-        const jlong cosmeticId = (item && id)
-            ? env->CallLongMethod(item, id) : static_cast<jlong>(-1);
-        if (clearException(env, "cosmetic selection item")) {
+        jobject boxedId = env->CallObjectMethod(cursor, next);
+        const jint cosmeticId = boxedId
+            ? env->CallIntMethod(boxedId, intValue) : static_cast<jint>(-1);
+        if (clearException(env, "manager cosmetic selection item")) {
             failed = true;
-        } else if (isActive == JNI_TRUE && cosmeticId >= 0) {
-            selection.insert(cosmeticId);
+        } else if (boxedId && cosmeticId >= 0) {
+            selection.insert(static_cast<jlong>(cosmeticId));
         }
         env->PopLocalFrame(nullptr);
     }
-    if (!failed && clearException(env, "cosmetic selection completion")) failed = true;
+    if (!failed && clearException(env, "manager cosmetic selection completion")) failed = true;
     if (cursor) env->DeleteLocalRef(cursor);
+    env->DeleteLocalRef(equipped);
     env->DeleteLocalRef(collectionClass);
     env->DeleteLocalRef(iteratorClass);
+    env->DeleteLocalRef(integerClass);
     env->DeleteLocalRef(managerClass);
-    env->DeleteLocalRef(owned);
     return !failed;
 }
 
-bool restoreCosmeticSelection(JNIEnv* env, jobject manager, const std::set<jlong>& selection) {
+bool restoreManagerCosmeticSelection(JNIEnv* env, jobject manager,
+                                     const std::set<jlong>& selection) {
     if (!manager) return false;
     jclass managerClass = env->GetObjectClass(manager);
-    jmethodID ownedAccessor = managerClass ? env->GetMethodID(
-        managerClass, "OHCHOCIROCIRRIIHHHOOIRCCIIRORO", "()Ljava/util/Set;") : nullptr;
-    jobject owned = ownedAccessor ? env->CallObjectMethod(manager, ownedAccessor) : nullptr;
+    jclass arrayListClass = env->FindClass("java/util/ArrayList");
     jclass collectionClass = env->FindClass("java/util/Collection");
-    jclass iteratorClass = env->FindClass("java/util/Iterator");
-    jmethodID iteratorMethod = collectionClass
-        ? env->GetMethodID(collectionClass, "iterator", "()Ljava/util/Iterator;") : nullptr;
-    jmethodID hasNext = iteratorClass ? env->GetMethodID(iteratorClass, "hasNext", "()Z") : nullptr;
-    jmethodID next = iteratorClass
-        ? env->GetMethodID(iteratorClass, "next", "()Ljava/lang/Object;") : nullptr;
-    if (clearException(env, "cosmetic restore roots") || !managerClass || !owned ||
-        !collectionClass || !iteratorClass || !iteratorMethod || !hasNext || !next) {
+    jclass integerClass = env->FindClass("java/lang/Integer");
+    jmethodID constructor = arrayListClass
+        ? env->GetMethodID(arrayListClass, "<init>", "()V") : nullptr;
+    jmethodID add = collectionClass
+        ? env->GetMethodID(collectionClass, "add", "(Ljava/lang/Object;)Z") : nullptr;
+    jmethodID valueOf = integerClass
+        ? env->GetStaticMethodID(integerClass, "valueOf", "(I)Ljava/lang/Integer;") : nullptr;
+    jmethodID setEquipped = managerClass ? env->GetMethodID(
+        managerClass, kEquippedCosmeticsSetter, "(Ljava/util/List;)V") : nullptr;
+    if (clearException(env, "manager cosmetic restore roots") || !managerClass ||
+        !arrayListClass || !collectionClass || !integerClass || !constructor ||
+        !add || !valueOf || !setEquipped) {
         if (managerClass) env->DeleteLocalRef(managerClass);
-        if (owned) env->DeleteLocalRef(owned);
+        if (arrayListClass) env->DeleteLocalRef(arrayListClass);
+        if (collectionClass) env->DeleteLocalRef(collectionClass);
+        if (integerClass) env->DeleteLocalRef(integerClass);
         return false;
     }
 
-    jobject cursor = env->CallObjectMethod(owned, iteratorMethod);
-    bool failed = clearException(env, "cosmetic restore iterator") || !cursor;
-    size_t matched = 0;
-    while (!failed && env->CallBooleanMethod(cursor, hasNext) == JNI_TRUE) {
-        if (env->PushLocalFrame(12) != JNI_OK) {
+    jobject staged = env->NewObject(arrayListClass, constructor);
+    bool failed = clearException(env, "manager cosmetic restore list") || !staged;
+    size_t stagedCount = 0;
+    for (const jlong id : selection) {
+        if (failed) break;
+        if (id < 0 || id > INT_MAX || env->PushLocalFrame(4) != JNI_OK) {
             failed = true;
             break;
         }
-        jobject item = env->CallObjectMethod(cursor, next);
-        jclass itemClass = item ? env->GetObjectClass(item) : nullptr;
-        jmethodID id = itemClass
-            ? env->GetMethodID(itemClass, "OCRIOHIIOCCCHOOCIRORIRHIRRCHCH", "()J") : nullptr;
-        jmethodID setActive = itemClass
-            ? env->GetMethodID(itemClass, "HCRCIRHIOCOOIHIROORHCOOHIOHHCR", "(Z)V") : nullptr;
-        const jlong cosmeticId = (item && id)
-            ? env->CallLongMethod(item, id) : static_cast<jlong>(-1);
-        const bool wanted = cosmeticId >= 0 && selection.find(cosmeticId) != selection.end();
-        if (item && setActive) env->CallVoidMethod(item, setActive, wanted ? JNI_TRUE : JNI_FALSE);
-        if (clearException(env, "cosmetic restore item")) {
+        jobject boxedId = env->CallStaticObjectMethod(
+            integerClass, valueOf, static_cast<jint>(id));
+        if (boxedId) env->CallBooleanMethod(staged, add, boxedId);
+        if (clearException(env, "manager cosmetic restore item") || !boxedId) {
             failed = true;
-        } else if (wanted) {
-            ++matched;
+        } else {
+            ++stagedCount;
         }
         env->PopLocalFrame(nullptr);
     }
-    if (!failed && clearException(env, "cosmetic restore completion")) failed = true;
-    if (cursor) env->DeleteLocalRef(cursor);
+    if (!failed) {
+        env->CallVoidMethod(manager, setEquipped, staged);
+        failed = clearException(env, "manager cosmetic restore commit");
+    }
+
+    std::set<jlong> verified;
+    const bool captured = !failed &&
+        captureManagerCosmeticSelection(env, manager, verified);
+    const bool valid = captured && verified == selection &&
+        stagedCount == selection.size();
+    logLine("MANAGER_COSMETIC_SELECTION_RESTORE requested=" +
+            std::to_string(selection.size()) +
+            " staged=" + std::to_string(stagedCount) +
+            " verified=" + std::to_string(verified.size()) +
+            " valid=" + std::to_string(valid));
+
+    if (staged) env->DeleteLocalRef(staged);
+    env->DeleteLocalRef(arrayListClass);
     env->DeleteLocalRef(collectionClass);
-    env->DeleteLocalRef(iteratorClass);
+    env->DeleteLocalRef(integerClass);
     env->DeleteLocalRef(managerClass);
-    env->DeleteLocalRef(owned);
-    logLine("COSMETIC_SELECTION_RESTORE requested=" + std::to_string(selection.size()) +
-            " matched=" + std::to_string(matched) +
-            " valid=" + std::to_string(!failed));
-    return !failed;
+    return valid;
 }
 
 bool captureEmoteSelection(JNIEnv* env, jobject manager, std::set<EmoteSelection>& selection) {
@@ -1204,7 +1585,7 @@ bool captureEmoteSelection(JNIEnv* env, jobject manager, std::set<EmoteSelection
     if (!manager) return false;
     jclass managerClass = env->GetObjectClass(manager);
     jmethodID getEquipped = managerClass ? env->GetMethodID(
-        managerClass, "CICIORCCIHCCRCIRCHCIOIRHIIHIOH", "()Ljava/util/Set;") : nullptr;
+        managerClass, "IRRHCHOORRCCCROHRCRORHHRCOORRI", "()Ljava/util/Set;") : nullptr;
     jobject equipped = getEquipped ? env->CallObjectMethod(manager, getEquipped) : nullptr;
     jclass collectionClass = env->FindClass("java/util/Collection");
     jclass iteratorClass = env->FindClass("java/util/Iterator");
@@ -1255,12 +1636,12 @@ bool restoreEmoteSelection(
     if (!manager || !g_persistentEquippedEmoteClass) return false;
     jclass managerClass = env->GetObjectClass(manager);
     jfieldID catalogField = managerClass ? env->GetStaticFieldID(
-        managerClass, "CROHCOROCHIORIHRIIHHOROOIIOCHO", "Lcom/google/common/collect/BiMap;") : nullptr;
+        managerClass, "CIHHOOROCCRIOHCHORROHOORHCOORR", "Lcom/google/common/collect/BiMap;") : nullptr;
     jobject catalog = catalogField ? env->GetStaticObjectField(managerClass, catalogField) : nullptr;
     jmethodID setEquipped = managerClass ? env->GetMethodID(
-        managerClass, "IROCROOIOIORORHHCCOOCCHRRRIOIC", "(Ljava/util/Set;)V") : nullptr;
+        managerClass, "IHOCOOIIIROHRRCRRIROIOCRHCOOHR", "(Ljava/util/Set;)V") : nullptr;
     jmethodID findEquipped = managerClass ? env->GetMethodID(
-        managerClass, "HOOOHOOHCIIROCCICRCRIICCRCIHOH", "(I)Ljava/util/Optional;") : nullptr;
+        managerClass, "RHHHCOIRCICOIHRRRHCOCORIHICOHH", "(I)Ljava/util/Optional;") : nullptr;
     jclass mapClass = env->FindClass("java/util/Map");
     jclass hashSetClass = env->FindClass("java/util/HashSet");
     jclass integerClass = env->FindClass("java/lang/Integer");
@@ -1344,7 +1725,7 @@ bool captureSpraySelection(JNIEnv* env, jobject manager, std::map<jint, jint>& s
     if (!manager) return false;
     jclass managerClass = env->GetObjectClass(manager);
     jmethodID getEquipped = managerClass ? env->GetMethodID(
-        managerClass, "RCOCICCIHRROOHOHCCCRRHICOOCHHO", "()Ljava/util/Set;") : nullptr;
+        managerClass, "OOOIIOOOIHRCIIRRIIRCHIORRCICOR", "()Ljava/util/Set;") : nullptr;
     jobject equipped = getEquipped ? env->CallObjectMethod(manager, getEquipped) : nullptr;
     jclass collectionClass = env->FindClass("java/util/Collection");
     jclass iteratorClass = env->FindClass("java/util/Iterator");
@@ -1392,7 +1773,7 @@ bool restoreSpraySelection(JNIEnv* env, jobject manager, const std::map<jint, ji
     if (!manager) return false;
     jclass managerClass = env->GetObjectClass(manager);
     jmethodID setEquipped = managerClass ? env->GetMethodID(
-        managerClass, "COOIOIRCCICRCCIHCCRHRCIHROHCCI", "(Ljava/util/Set;)V") : nullptr;
+        managerClass, "HICROHCCIOCRCORICOIHRCOOHHRCCH", "(Ljava/util/Set;)V") : nullptr;
     jclass sprayClass = env->FindClass("com/lunarclient/websocket/spray/v1/EquippedSpray");
     jclass hashSetClass = env->FindClass("java/util/HashSet");
     jclass collectionClass = env->FindClass("java/util/Collection");
@@ -1494,10 +1875,10 @@ struct SelectionCaptureStatus {
 
 SelectionCaptureStatus captureSelection(JNIEnv* env, SelectionState& selection) {
     SelectionCaptureStatus status;
-    if (g_persistentPlayerCosmeticState && g_persistentCosmeticManager) {
+    if (g_persistentCosmeticManager && g_persistentLocalPlayerUuid) {
         std::set<jlong> cosmetics;
-        if (capturePlayerCosmeticSelection(
-                env, g_persistentPlayerCosmeticState, cosmetics)) {
+        if (captureLocalPlayerCosmeticSelection(
+                env, g_persistentCosmeticManager, cosmetics)) {
             selection.cosmetics = std::move(cosmetics);
             status.any = true;
         } else status.complete = false;
@@ -1528,15 +1909,23 @@ SelectionCaptureStatus captureSelection(JNIEnv* env, SelectionState& selection) 
 
 bool restoreSelection(JNIEnv* env, const SelectionState& selection) {
     bool valid = true;
-    if (g_persistentCosmeticManager && g_persistentPlayerCosmeticState) {
-        valid = restorePlayerCosmeticSelection(
-            env, g_persistentCosmeticManager, g_persistentPlayerCosmeticState,
-            selection.cosmetics) && valid;
-        // Keep the catalog wrappers in sync for Locker's selected-state UI;
-        // rendering itself consumes the local player state list above.
-        valid = restoreCosmeticSelection(
-            env, g_persistentCosmeticManager, selection.cosmetics) && valid;
+    if (g_persistentCosmeticManager && g_persistentLocalPlayerUuid) {
+        const bool managerRestored = restoreManagerCosmeticSelection(
+            env, g_persistentCosmeticManager, selection.cosmetics);
+        const bool playerRestored = restoreLocalPlayerCosmeticSelection(
+            env, g_persistentCosmeticManager, selection.cosmetics);
+        if (g_persistentPlayerCosmeticState) {
+            const bool previewRestored = restorePlayerCosmeticSelection(
+                env, g_persistentCosmeticManager,
+                g_persistentPlayerCosmeticState, selection.cosmetics);
+            logLine("LOADOUT_PREVIEW_RESTORE requested=" +
+                    std::to_string(selection.cosmetics.size()) +
+                    " valid=" + std::to_string(previewRestored));
+        }
+        g_localCosmeticSelectionInitialized = playerRestored;
+        valid = managerRestored && playerRestored && valid;
     } else {
+        g_localCosmeticSelectionInitialized = false;
         valid = false;
     }
     if (g_persistentEmoteManager) {
@@ -1555,11 +1944,12 @@ bool restoreSelection(JNIEnv* env, const SelectionState& selection) {
     return valid;
 }
 
-void monitorSelection(JNIEnv* env) {
+void monitorSelection(JNIEnv* env, jvmtiEnv* jvmti) {
     SelectionState previous = g_hasSavedSelection ? g_savedSelection : SelectionState{};
     bool started = false;
     bool waitingLogged = false;
     bool lastComplete = true;
+    unsigned int iteration = 0;
 
     for (;;) {
         if (env->PushLocalFrame(256) != JNI_OK) {
@@ -1567,6 +1957,59 @@ void monitorSelection(JNIEnv* env) {
             Sleep(750);
             continue;
         }
+        ++iteration;
+        bool managerRebound = false;
+        if (iteration == 1 || iteration % 8 == 0) {
+            managerRebound = refreshPersistentCosmeticManager(env, jvmti);
+            if (managerRebound) g_localCosmeticSelectionInitialized = false;
+            if (g_persistentCosmeticManager) {
+                const ManagerState live = inspectManager(env, g_persistentCosmeticManager);
+                const bool ownedLooksReset = live.catalog > 0 && live.owned >= 0 &&
+                    live.owned < (live.catalog * 3) / 4;
+                if (ownedLooksReset) {
+                    const bool repaired = populateOwnedFromCatalog(
+                        env, g_persistentCosmeticManager);
+                    logLine("COSMETIC_UNLOCK_REFRESH rebound=" +
+                            std::to_string(managerRebound) +
+                            " owned_before=" + std::to_string(live.owned) +
+                            " repaired=" + std::to_string(repaired));
+                }
+            }
+        }
+
+        bool localPlayerAvailable = g_persistentLocalPlayerUuid != nullptr;
+        if (iteration == 1 || iteration % 8 == 0) {
+            localPlayerAvailable = bindLocalPlayerUuid(env, jvmti);
+        }
+
+        if (!g_localCosmeticSelectionInitialized && localPlayerAvailable &&
+            g_persistentCosmeticManager && (iteration == 1 || iteration % 4 == 0)) {
+            const std::set<jlong> desired = g_hasSavedSelection
+                ? g_savedSelection.cosmetics : std::set<jlong>{};
+            const bool managerRestored = restoreManagerCosmeticSelection(
+                env, g_persistentCosmeticManager, desired);
+            const bool playerRestored = restoreLocalPlayerCosmeticSelection(
+                env, g_persistentCosmeticManager, desired);
+            g_localCosmeticSelectionInitialized = playerRestored;
+            logLine(managerRestored && playerRestored
+                        ? "LOCAL_PLAYER_DEFERRED_RESTORE_COMPLETE"
+                        : "LOCAL_PLAYER_DEFERRED_RESTORE_FAILED");
+            waitingLogged = false;
+        }
+
+        if ((iteration == 1 || iteration % 8 == 0) &&
+            bindPlayerCosmeticState(env, jvmti, true) &&
+            g_persistentCosmeticManager) {
+            const std::set<jlong> desired = g_hasSavedSelection
+                ? g_savedSelection.cosmetics : std::set<jlong>{};
+            const bool previewRestored = restorePlayerCosmeticSelection(
+                env, g_persistentCosmeticManager,
+                g_persistentPlayerCosmeticState, desired);
+            logLine("LOADOUT_PREVIEW_REFRESH requested=" +
+                    std::to_string(desired.size()) +
+                    " valid=" + std::to_string(previewRestored));
+        }
+
         SelectionState current = previous;
         const SelectionCaptureStatus status = captureSelection(env, current);
         if (!status.any) {
@@ -1588,6 +2031,8 @@ void monitorSelection(JNIEnv* env) {
                 logLine("SELECTION_SAVE_FAILED reason=MONITOR_BASELINE");
             } else {
                 previous = std::move(current);
+                g_savedSelection = previous;
+                g_hasSavedSelection = true;
                 started = true;
                 lastComplete = true;
                 logLine("SELECTION_MONITOR_STARTED interval_ms=750 complete=1");
@@ -1609,6 +2054,8 @@ void monitorSelection(JNIEnv* env) {
                 if (saveSelection(current)) {
                     logLine("SELECTION_SAVE_CHANGED");
                     previous = std::move(current);
+                    g_savedSelection = previous;
+                    g_hasSavedSelection = true;
                 } else {
                     logLine("SELECTION_SAVE_FAILED reason=CHANGED");
                 }
@@ -1628,7 +2075,7 @@ bool unlockEmotes(JNIEnv* env, jvmtiEnv* jvmti) {
 
     jobject manager = firstInstance(env, jvmti, managerClass);
     jfieldID catalogField = env->GetStaticFieldID(
-        managerClass, "CROHCOROCHIORIHRIIHHOROOIIOCHO",
+        managerClass, "CIHHOOROCCRIOHCHORROHOORHCOORR",
         "Lcom/google/common/collect/BiMap;");
     jobject catalog = catalogField
         ? env->GetStaticObjectField(managerClass, catalogField)
@@ -1658,11 +2105,11 @@ bool unlockEmotes(JNIEnv* env, jvmtiEnv* jvmti) {
     jmethodID wrapperCtor = env->GetMethodID(
         wrapperClass, "<init>", wrapperCtorDescriptor.c_str());
     jmethodID setOwned = env->GetMethodID(
-        managerClass, "OOHCHIRHROIORHHRHIOHIOHCCCCIIR", "(Ljava/util/List;)V");
+        managerClass, "OIRCHOOIOHIHCOCIOCRRIRROROOIOO", "(Ljava/util/List;)V");
     jmethodID getOwned = env->GetMethodID(
-        managerClass, "CCRIOCOIRIHCRCIHIHROOOCHIOORIR", "()Ljava/util/List;");
+        managerClass, "RRHOICCICRIICHHOCCICIIHCCROOCC", "()Ljava/util/List;");
     jmethodID setOwnsPlus = env->GetMethodID(
-        managerClass, "RROOHRRHRHRCIRCIICROHRRRCROIIH", "(Z)V");
+        managerClass, "OOOOOOROIIRHCIORCIOHRCIROIHIHC", "(Z)V");
     if (clearException(env, "emote methods") || !keySet || !iterator || !hasNext ||
         !next || !intValue || !listCtor || !add || !wrapperCtor || !setOwned ||
         !getOwned || !setOwnsPlus) return false;
@@ -1733,7 +2180,7 @@ bool unlockJams(JNIEnv* env, jvmtiEnv* jvmti) {
     if (!manager) return false;
 
     jmethodID getCatalog = env->GetStaticMethodID(
-        managerClass, "ORIHIIRRICRHRCCRRHIHHRIHIRHRRH", "()Ljava/util/Map;");
+        managerClass, "RCRIHOIIOICOORCRHRCHIICHRHORRI", "()Ljava/util/Map;");
     jmethodID newBuilder = env->GetStaticMethodID(
         ownedClass, "newBuilder", (std::string("()") + kOwnedJamBuilderDescriptor).c_str());
     if (clearException(env, "jam roots") || !getCatalog || !newBuilder) return false;
@@ -1760,9 +2207,9 @@ bool unlockJams(JNIEnv* env, jvmtiEnv* jvmti) {
     jmethodID add = collectionClass
         ? env->GetMethodID(collectionClass, "add", "(Ljava/lang/Object;)Z") : nullptr;
     jmethodID setOwned = env->GetMethodID(
-        managerClass, "CORCCCCORCIIRRCHCCHROOIIOICORC", "(Ljava/util/List;)V");
+        managerClass, "OHOOIRHHHROHOCIIOIOCHOHCCRROIO", "(Ljava/util/List;)V");
     jmethodID getOwned = env->GetMethodID(
-        managerClass, "IHIHCHCOORIHHORRIORCHCRCCCIIOH", "()Ljava/util/List;");
+        managerClass, "CIROROCOIRIOROICHOIOCRRICIOICI", "()Ljava/util/List;");
     if (clearException(env, "jam Java methods") || !keySet || !iterator || !hasNext ||
         !next || !intValue || !listCtor || !add || !setOwned || !getOwned) return false;
 
@@ -1834,13 +2281,13 @@ bool unlockSprays(JNIEnv* env, jvmtiEnv* jvmti) {
     if (!manager) return false;
 
     jmethodID getCatalog = env->GetMethodID(
-        managerClass, "OOICHCCRRHIRHRRHHCIOHHCOIICHHC",
+        managerClass, "RHRRICOCRHCIIRHOCOIRRHCOHIHCCH",
         "()Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;");
     jmethodID getOwned = env->GetMethodID(
-        managerClass, "OOROCCOIRCIROIHOCHHCOHCIIOCRHI",
+        managerClass, "HIIOIIOCIRCHOIHCOORHOHHRRCRCHH",
         "()Lit/unimi/dsi/fastutil/objects/Object2LongMap;");
     jmethodID setOwned = env->GetMethodID(
-        managerClass, "COOCHIRORIICRCIIRIROHIIRIRICCH",
+        managerClass, "RCRROIORHICCOHOIIIRROHIORIIIHC",
         "(Lit/unimi/dsi/fastutil/objects/Object2LongMap;)V");
     if (clearException(env, "spray accessors") || !getCatalog || !getOwned || !setOwned) {
         return false;
@@ -1924,15 +2371,15 @@ bool unlockBadges(JNIEnv* env, jvmtiEnv* jvmti) {
     if (!manager) return false;
 
     jmethodID getCatalog = env->GetMethodID(
-        managerClass, "IIOOHRCOOCIHRIHCCRRHCOROIOOHCR", "()Ljava/util/Map;");
+        managerClass, "OORHOCIOCIIROOOHHCRCHCCOICOCHH", "()Ljava/util/Map;");
     const std::string converterDescriptor =
         std::string("(") + kBadgeMetadataDescriptor + ")" + kBadgeWrapperDescriptor;
     jmethodID convert = env->GetStaticMethodID(
-        wrapperClass, "COOCHIRORIICRCIIRIROHIIRIRICCH", converterDescriptor.c_str());
+        wrapperClass, "RCRROIORHICCOHOIIIRROHIORIIIHC", converterDescriptor.c_str());
     jmethodID setOwned = env->GetMethodID(
-        managerClass, "CHOOCRRRCRHRCOOOCIICORHHOIROOR", "(Ljava/util/List;)V");
+        managerClass, "CIHROHOORRHCROOIRRCROCRIHROHIH", "(Ljava/util/List;)V");
     jfieldID ownedField = env->GetFieldID(
-        managerClass, "HIRRHOHIOOCCCIHRIHCHROICOROICH", "Ljava/util/List;");
+        managerClass, "CCRHORCHOCCCOCOOCRRRRORHOHOHRI", "Ljava/util/List;");
     if (clearException(env, "badge accessors") || !getCatalog || !convert ||
         !setOwned || !ownedField) return false;
     jobject catalog = env->CallObjectMethod(manager, getCatalog);
@@ -2058,14 +2505,14 @@ bool unlockLunarPlus(JNIEnv* env, jvmtiEnv* jvmti,
                            (std::string("()") + kLoginResponseDescriptor).c_str())
         : nullptr;
     jmethodID handleLogin = env->GetMethodID(
-        managerClass, "RORCICOHRIOIIIOIOHIIIICRCIHRII",
+        managerClass, "RCRHHRIOICOORCIRCHOHHRHHIRRCRI",
         (std::string("(") + kLoginResponseDescriptor + ")V").c_str());
     jmethodID getColors = env->GetMethodID(
-        managerClass, "OHCHOCIROCIRRIIHHHOOIRCCIIRORO", "()Ljava/util/Set;");
+        managerClass, "IOOCHIHIHRRIRORHHRHOIORORCIHCR", "()Ljava/util/Set;");
     jmethodID isActive = env->GetMethodID(
-        managerClass, "RHICHOCCRORRIIHHCHICIRRORHHCCO", "()Z");
+        managerClass, "COOIHIRICCHICOOCORRCOCCHHIRHIC", "()Z");
     jmethodID refreshProvider = env->GetMethodID(
-        managerClass, "CHOHIHHIROOCORRCOORHRCIOIIOOCO", "()V");
+        managerClass, "IOHRRCHCRIHRIOOHOHRIRHCHIROCRO", "()V");
     if (clearException(env, "lunar plus methods") || !available || !loginBuilder ||
         !listCtor || !add || !addAll || !listGet || !clearColors || !addAllColors ||
         !setPlusColor || !buildLogin || !handleLogin || !getColors || !isActive ||
@@ -2219,13 +2666,16 @@ bool configureJvmti(jvmtiEnv* jvmti) {
 void runAgent() {
     wchar_t modulePath[32768]{};
     GetModuleFileNameW(g_module, modulePath, static_cast<DWORD>(_countof(modulePath)));
+    const std::wstring moduleName = std::filesystem::path(modulePath).stem().wstring();
     g_logPath = std::filesystem::path(modulePath).parent_path() / L"lunar_unlock_agent.log";
+    g_statusPath = std::filesystem::path(modulePath).parent_path() /
+        (L"lunar_unlock_status_" + std::to_wstring(GetCurrentProcessId()) +
+         L"_" + moduleName + L".txt");
 
     // Scope duplicate-load protection to the concrete agent module.  This
     // keeps a stale debug build from suppressing a rebuilt agent during
     // in-process version testing while still preventing the same DLL from
     // starting two workers in one JVM.
-    const std::wstring moduleName = std::filesystem::path(modulePath).stem().wstring();
     const std::wstring mutexName = L"Local\\ColdEternityTeam_LunarCosmetics_" +
         std::to_wstring(GetCurrentProcessId()) + L"_" + moduleName;
     HANDLE singleInstance = CreateMutexW(nullptr, TRUE, mutexName.c_str());
@@ -2235,6 +2685,7 @@ void runAgent() {
     }
 
     logLine("AGENT_LOADED pid=" + std::to_string(GetCurrentProcessId()));
+    writeStatus("RUNNING");
     initializeSelectionPath();
     g_hasSavedSelection = loadSelection(g_savedSelection);
     logLine(std::string("SELECTION_CONFIG loaded=") + (g_hasSavedSelection ? "1" : "0"));
@@ -2245,6 +2696,7 @@ void runAgent() {
     }
     if (!jvmModule) {
         logLine("JVM_NOT_FOUND");
+        writeStatus("FAILED JVM_NOT_FOUND");
         CloseHandle(singleInstance);
         return;
     }
@@ -2254,6 +2706,7 @@ void runAgent() {
         GetProcAddress(jvmModule, "JNI_GetCreatedJavaVMs"));
     if (!getCreatedVMs) {
         logLine("JNI_EXPORT_NOT_FOUND");
+        writeStatus("FAILED JNI_EXPORT_NOT_FOUND");
         CloseHandle(singleInstance);
         return;
     }
@@ -2262,6 +2715,7 @@ void runAgent() {
     jsize vmCount = 0;
     if (getCreatedVMs(vms, 4, &vmCount) != JNI_OK || vmCount == 0) {
         logLine("JVM_INSTANCE_NOT_FOUND");
+        writeStatus("FAILED JVM_INSTANCE_NOT_FOUND");
         CloseHandle(singleInstance);
         return;
     }
@@ -2270,14 +2724,18 @@ void runAgent() {
     bool attached = false;
     jint envResult = vms[0]->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_8);
     if (envResult == JNI_EDETACHED) {
-        if (vms[0]->AttachCurrentThread(reinterpret_cast<void**>(&env), nullptr) != JNI_OK) {
+        // The monitor must not keep the JVM alive after the game window closes.
+        if (vms[0]->AttachCurrentThreadAsDaemon(
+                reinterpret_cast<void**>(&env), nullptr) != JNI_OK) {
             logLine("JNI_ATTACH_FAILED");
+            writeStatus("FAILED JNI_ATTACH_FAILED");
             CloseHandle(singleInstance);
             return;
         }
         attached = true;
     } else if (envResult != JNI_OK) {
         logLine("JNI_ENV_FAILED result=" + std::to_string(envResult));
+        writeStatus("FAILED JNI_ENV_FAILED");
         CloseHandle(singleInstance);
         return;
     }
@@ -2287,6 +2745,7 @@ void runAgent() {
         reinterpret_cast<void**>(&jvmti), JVMTI_VERSION_1_2);
     if (jvmtiResult != JNI_OK || !jvmti || !configureJvmti(jvmti)) {
         logLine("JVMTI_ENV_FAILED result=" + std::to_string(jvmtiResult));
+        writeStatus("FAILED JVMTI_ENV_FAILED");
         if (attached) vms[0]->DetachCurrentThread();
         CloseHandle(singleInstance);
         return;
@@ -2438,16 +2897,28 @@ void runAgent() {
             " lunar_plus=" + std::to_string(lunarPlusUnlocked));
 
     if (env->PushLocalFrame(256) == JNI_OK) {
+        bindLocalPlayerUuid(env, jvmti);
         bindPlayerCosmeticState(env, jvmti);
         bool restored = false;
         if (g_hasSavedSelection) {
             restored = restoreSelection(env, g_savedSelection);
             logLine(restored ? "SELECTION_RESTORE_COMPLETE" : "SELECTION_RESTORE_INCOMPLETE");
-        } else if (g_persistentCosmeticManager && g_persistentPlayerCosmeticState) {
+        } else if (g_persistentCosmeticManager && g_persistentLocalPlayerUuid) {
             // A clean install starts with no equipped Cosmetics. The catalog
             // remains fully unlocked, so the user can choose items manually.
-            restored = restorePlayerCosmeticSelection(
-                env, g_persistentCosmeticManager, g_persistentPlayerCosmeticState, {});
+            restored = restoreManagerCosmeticSelection(
+                env, g_persistentCosmeticManager, {});
+            const bool playerRestored = restoreLocalPlayerCosmeticSelection(
+                env, g_persistentCosmeticManager, {});
+            if (g_persistentPlayerCosmeticState) {
+                const bool previewRestored = restorePlayerCosmeticSelection(
+                    env, g_persistentCosmeticManager,
+                    g_persistentPlayerCosmeticState, {});
+                logLine("LOADOUT_PREVIEW_INITIAL_RESET valid=" +
+                        std::to_string(previewRestored));
+            }
+            g_localCosmeticSelectionInitialized = playerRestored;
+            restored = playerRestored && restored;
             logLine(restored ? "SELECTION_INITIAL_RESET" : "SELECTION_INITIAL_RESET_FAILED");
         }
         env->PopLocalFrame(nullptr);
@@ -2457,8 +2928,10 @@ void runAgent() {
 
     // Keep the worker attached while the game is running so changes made in
     // the Locker UI are persisted without requiring another injection.
-    logLine("AGENT_COMPLETE success=" + std::to_string(unlocked && extrasComplete));
-    monitorSelection(env);
+    const bool complete = unlocked && extrasComplete;
+    logLine("AGENT_COMPLETE success=" + std::to_string(complete));
+    writeStatus(complete ? "SUCCESS" : "FAILED UNLOCK_INCOMPLETE");
+    monitorSelection(env, jvmti);
     if (attached) vms[0]->DetachCurrentThread();
     CloseHandle(singleInstance);
 }

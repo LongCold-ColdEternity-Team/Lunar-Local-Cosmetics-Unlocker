@@ -100,6 +100,37 @@ bool writeBytes(const std::wstring& path, const void* data, DWORD size) {
     return output.good();
 }
 
+std::wstring statusPathFor(const std::wstring& dllPath, DWORD pid) {
+    const size_t separator = dllPath.find_last_of(L"\\/");
+    const std::wstring directory = separator == std::wstring::npos
+        ? L"." : dllPath.substr(0, separator);
+    const size_t nameStart = separator == std::wstring::npos ? 0 : separator + 1;
+    const size_t extension = dllPath.find_last_of(L'.');
+    const std::wstring moduleName = dllPath.substr(
+        nameStart, extension == std::wstring::npos ? std::wstring::npos : extension - nameStart);
+    return directory + L"\\lunar_unlock_status_" + std::to_wstring(pid) +
+        L"_" + moduleName + L".txt";
+}
+
+std::string readStatus(const std::wstring& path) {
+    std::ifstream input(path, std::ios::binary);
+    std::string line;
+    if (input) std::getline(input, line);
+    if (!line.empty() && line.back() == '\r') line.pop_back();
+    return line;
+}
+
+std::wstring utf8ToWide(const std::string& value) {
+    if (value.empty()) return {};
+    const int length = MultiByteToWideChar(
+        CP_UTF8, 0, value.data(), static_cast<int>(value.size()), nullptr, 0);
+    if (length <= 0) return {};
+    std::wstring result(length, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, value.data(), static_cast<int>(value.size()),
+                        result.data(), length);
+    return result;
+}
+
 std::wstring materializeEmbeddedPayload() {
     const void* dllData = nullptr;
     DWORD dllSize = 0;
@@ -223,12 +254,53 @@ std::wstring win32Error(DWORD code) {
 
 InjectResult injectDll(DWORD pid, const std::wstring& dllPath, DWORD timeoutMs) {
     InjectResult result;
+    const std::wstring statusPath = statusPathFor(dllPath, pid);
+    auto waitForResult = [&](bool alreadyLoaded) {
+        constexpr DWORD kVerificationTimeoutMs = 195000;
+        for (DWORD elapsed = 0; elapsed < kVerificationTimeoutMs; elapsed += 200) {
+            const std::string status = readStatus(statusPath);
+            if (status == "SUCCESS") {
+                result.success = true;
+                result.alreadyLoaded = alreadyLoaded;
+                result.detail = alreadyLoaded
+                    ? L"当前游戏进程已注入，并已验证本地解锁成功。"
+                    : L"代理已验证：普通饰品与全部扩展分类均已本地解锁。";
+                return;
+            }
+            if (status.rfind("FAILED", 0) == 0) {
+                result.error = ERROR_GEN_FAILURE;
+                const std::string reason = status.size() > 7 ? status.substr(7) : "UNKNOWN";
+                result.detail = L"组件已加载，但解锁失败（" + utf8ToWide(reason) + L"）；请打开日志。";
+                return;
+            }
+            HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, pid);
+            if (process) {
+                const bool exited = WaitForSingleObject(process, 0) == WAIT_OBJECT_0;
+                CloseHandle(process);
+                if (exited) {
+                    result.error = ERROR_PROCESS_ABORTED;
+                    result.detail = L"游戏进程在验证解锁结果前已退出。";
+                    return;
+                }
+            }
+            Sleep(200);
+        }
+        result.error = WAIT_TIMEOUT;
+        result.detail = L"组件已加载，但未在规定时间内完成解锁；请打开日志检查。";
+    };
+
     if (hasAgentLoaded(pid, dllPath)) {
-        result.success = true;
-        result.alreadyLoaded = true;
-        result.detail = L"当前游戏进程已经完成注入，无需重复操作。";
+        const std::string status = readStatus(statusPath);
+        if (status.empty()) {
+            result.error = ERROR_REVISION_MISMATCH;
+            result.detail = L"当前进程已加载旧版组件且无法验证结果，请重启游戏后重新注入。";
+            return result;
+        }
+        waitForResult(true);
         return result;
     }
+    DeleteFileW(statusPath.c_str());
+    DeleteFileW((statusPath + L".tmp").c_str());
     HANDLE process = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION |
                                  PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, pid);
     if (!process) {
@@ -281,8 +353,7 @@ InjectResult injectDll(DWORD pid, const std::wstring& dllPath, DWORD timeoutMs) 
         result.detail = wait == WAIT_TIMEOUT ? L"注入等待超时，请确认游戏仍在运行。" : L"目标进程拒绝加载 DLL。";
         return result;
     }
-    result.success = true;
-    result.detail = L"DLL 已加载；普通饰品与扩展分类已在本地解锁。";
+    waitForResult(false);
     return result;
 }
 
