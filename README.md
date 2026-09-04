@@ -2,7 +2,7 @@
 
 开发者：ColdEternity Team
 
-当前版本：`v1.1.0`
+当前版本：`v1.2.0`
 
 原始仓库：<https://github.com/LongCold-ColdEternity-Team/Lunar-Local-Cosmetics-Unlocker>
 
@@ -44,6 +44,18 @@
 
 每次重启游戏后需要重新注入；同一个 JVM 会阻止重复注入。
 
+## 本地选择保存
+
+注入器只保存当前客户端的装备选择，不会修改账号购买状态或服务端数据。首次注入没有配置时，Cosmetics 保持全部关闭；之后在 Locker 中装备或取消装备 Cosmetics、Emotes、Sprays，或更换 Lunar+ 颜色，后台会在约 750ms 内自动写入配置。
+
+配置文件位置：
+
+```text
+%LOCALAPPDATA%\ColdEternityTeam\LunarLocalCosmetics\selection-v1.txt
+```
+
+再次启动游戏并注入后，保存的选择会自动恢复。删除 `selection-v1.txt` 可清除本地选择；配置文件仅包含饰品 ID、Emote/喷涂槽位、Jam ID 和颜色值，不包含登录信息。旧版 `emote=<id>` 配置会被兼容读取，并在下次保存时自动迁移为包含槽位和 Jam 参数的新格式。
+
 ## 构建
 
 需要 Visual Studio C++ 工具链和 JDK 17 headers：
@@ -58,7 +70,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 - `bin\LunarUnlockInjector.exe`，命令行调试器
 - `dist\LunarUnlockUI.exe`，内嵌 DLL 的单文件 UI
 
-版本号统一定义在 `resource.h`，当前保持 `1.1.0`。
+版本号统一定义在 `resource.h`，当前为 `1.2.0`。
 
 ## 二次修改与分发
 
