@@ -6,6 +6,7 @@
 #include <climits>
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -114,6 +115,8 @@ std::filesystem::path g_logPath;
 std::filesystem::path g_statusPath;
 std::filesystem::path g_selectionPath;
 std::mutex g_logMutex;
+std::mutex g_resolutionLogMutex;
+std::set<std::string> g_loggedResolutions;
 std::atomic<unsigned long> g_tagSequence{1};
 
 struct EmoteSelection {
@@ -550,6 +553,183 @@ std::string jvmtiErrorName(jvmtiEnv* jvmti, jvmtiError error) {
     return std::to_string(static_cast<int>(error));
 }
 
+void logResolutionOnce(const std::string& kind, const std::string& name,
+                       const std::string& descriptor) {
+    const std::string key = kind + "\n" + name + "\n" + descriptor;
+    {
+        std::lock_guard<std::mutex> guard(g_resolutionLogMutex);
+        if (!g_loggedResolutions.insert(key).second) return;
+    }
+    logLine("RUNTIME_MEMBER_RESOLVED kind=" + kind + " name=" + name +
+            " descriptor=" + descriptor);
+}
+
+jmethodID tryMethodByName(JNIEnv* env, jclass klass, const char* name,
+                          const char* descriptor, bool wantStatic) {
+    if (!klass || !name || !descriptor) return nullptr;
+    jmethodID method = wantStatic
+        ? env->GetStaticMethodID(klass, name, descriptor)
+        : env->GetMethodID(klass, name, descriptor);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        return nullptr;
+    }
+    return method;
+}
+
+jmethodID resolveMethod(JNIEnv* env, jvmtiEnv* jvmti, jclass klass,
+                        const char* preferredName, const std::string& descriptor,
+                        bool wantStatic, const char* kind,
+                        jmethodID excluded = nullptr) {
+    if (!klass || !jvmti) return nullptr;
+    if (preferredName) {
+        jmethodID preferred = tryMethodByName(
+            env, klass, preferredName, descriptor.c_str(), wantStatic);
+        if (preferred && preferred != excluded) return preferred;
+    }
+
+    jclass current = static_cast<jclass>(env->NewLocalRef(klass));
+    while (current) {
+        jint count = 0;
+        jmethodID* methods = nullptr;
+        if (jvmti->GetClassMethods(current, &count, &methods) == JVMTI_ERROR_NONE) {
+            for (jint i = 0; i < count; ++i) {
+                char* name = nullptr;
+                char* signature = nullptr;
+                char* generic = nullptr;
+                jint modifiers = 0;
+                const bool named = jvmti->GetMethodName(
+                    methods[i], &name, &signature, &generic) == JVMTI_ERROR_NONE;
+                const bool modified = jvmti->GetMethodModifiers(
+                    methods[i], &modifiers) == JVMTI_ERROR_NONE;
+                const bool isStatic = modified && (modifiers & 0x0008) != 0;
+                const bool match = named && signature &&
+                    descriptor == signature && isStatic == wantStatic &&
+                    methods[i] != excluded && name && std::string(name) != "<init>" &&
+                    std::string(name) != "<clinit>";
+                if (match) {
+                    const jmethodID result = methods[i];
+                    logResolutionOnce(kind ? kind : "method", name, descriptor);
+                    if (name) jvmti->Deallocate(reinterpret_cast<unsigned char*>(name));
+                    if (signature) {
+                        jvmti->Deallocate(reinterpret_cast<unsigned char*>(signature));
+                    }
+                    if (generic) {
+                        jvmti->Deallocate(reinterpret_cast<unsigned char*>(generic));
+                    }
+                    if (methods) {
+                        jvmti->Deallocate(reinterpret_cast<unsigned char*>(methods));
+                    }
+                    env->DeleteLocalRef(current);
+                    return result;
+                }
+                if (name) jvmti->Deallocate(reinterpret_cast<unsigned char*>(name));
+                if (signature) {
+                    jvmti->Deallocate(reinterpret_cast<unsigned char*>(signature));
+                }
+                if (generic) {
+                    jvmti->Deallocate(reinterpret_cast<unsigned char*>(generic));
+                }
+            }
+        }
+        if (methods) jvmti->Deallocate(reinterpret_cast<unsigned char*>(methods));
+        jclass parent = env->GetSuperclass(current);
+        if (env->ExceptionCheck()) {
+            env->ExceptionClear();
+            parent = nullptr;
+        }
+        env->DeleteLocalRef(current);
+        current = parent;
+    }
+    return nullptr;
+}
+
+jfieldID tryFieldByName(JNIEnv* env, jclass klass, const char* name,
+                        const char* descriptor, bool wantStatic) {
+    if (!klass || !name || !descriptor) return nullptr;
+    jfieldID field = wantStatic
+        ? env->GetStaticFieldID(klass, name, descriptor)
+        : env->GetFieldID(klass, name, descriptor);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        return nullptr;
+    }
+    return field;
+}
+
+jfieldID resolveField(JNIEnv* env, jvmtiEnv* jvmti, jclass klass,
+                      const char* preferredName, const std::string& descriptor,
+                      bool wantStatic, const char* kind,
+                      std::initializer_list<const char*> genericNeedles = {}) {
+    if (!klass || !jvmti) return nullptr;
+    if (preferredName) {
+        jfieldID preferred = tryFieldByName(
+            env, klass, preferredName, descriptor.c_str(), wantStatic);
+        if (preferred) return preferred;
+    }
+
+    jclass current = static_cast<jclass>(env->NewLocalRef(klass));
+    while (current) {
+        jint count = 0;
+        jfieldID* fields = nullptr;
+        if (jvmti->GetClassFields(current, &count, &fields) == JVMTI_ERROR_NONE) {
+            for (jint i = 0; i < count; ++i) {
+                char* name = nullptr;
+                char* signature = nullptr;
+                char* generic = nullptr;
+                jint modifiers = 0;
+                const bool named = jvmti->GetFieldName(
+                    current, fields[i], &name, &signature, &generic) == JVMTI_ERROR_NONE;
+                const bool modified = jvmti->GetFieldModifiers(
+                    current, fields[i], &modifiers) == JVMTI_ERROR_NONE;
+                const bool isStatic = modified && (modifiers & 0x0008) != 0;
+                bool genericMatch = true;
+                for (const char* needle : genericNeedles) {
+                    if (!needle || !*needle) continue;
+                    if (!generic || std::string(generic).find(needle) == std::string::npos) {
+                        genericMatch = false;
+                        break;
+                    }
+                }
+                const bool match = named && signature && descriptor == signature &&
+                    isStatic == wantStatic && genericMatch;
+                if (match) {
+                    const jfieldID result = fields[i];
+                    logResolutionOnce(kind ? kind : "field", name ? name : "?", descriptor);
+                    if (name) jvmti->Deallocate(reinterpret_cast<unsigned char*>(name));
+                    if (signature) {
+                        jvmti->Deallocate(reinterpret_cast<unsigned char*>(signature));
+                    }
+                    if (generic) {
+                        jvmti->Deallocate(reinterpret_cast<unsigned char*>(generic));
+                    }
+                    if (fields) {
+                        jvmti->Deallocate(reinterpret_cast<unsigned char*>(fields));
+                    }
+                    env->DeleteLocalRef(current);
+                    return result;
+                }
+                if (name) jvmti->Deallocate(reinterpret_cast<unsigned char*>(name));
+                if (signature) {
+                    jvmti->Deallocate(reinterpret_cast<unsigned char*>(signature));
+                }
+                if (generic) {
+                    jvmti->Deallocate(reinterpret_cast<unsigned char*>(generic));
+                }
+            }
+        }
+        if (fields) jvmti->Deallocate(reinterpret_cast<unsigned char*>(fields));
+        jclass parent = env->GetSuperclass(current);
+        if (env->ExceptionCheck()) {
+            env->ExceptionClear();
+            parent = nullptr;
+        }
+        env->DeleteLocalRef(current);
+        current = parent;
+    }
+    return nullptr;
+}
+
 jclass findLoadedClass(JNIEnv* env, jvmtiEnv* jvmti, const char* wantedSignature) {
     jint count = 0;
     jclass* classes = nullptr;
@@ -642,39 +822,104 @@ struct ManagerState {
     jint ownedBySerial = -1;
 };
 
-ManagerState inspectManager(JNIEnv* env, jobject manager) {
+struct ManagerCollections {
+    jobject catalog = nullptr;
+    jobject owned = nullptr;
+    jobject ownedBySerial = nullptr;
+};
+
+struct CachedObjectMember {
+    bool resolved = false;
+    jmethodID method = nullptr;
+    jfieldID field = nullptr;
+};
+
+jobject readObjectMember(JNIEnv* env, jvmtiEnv* jvmti, jobject object,
+                         jclass klass, const char* preferredMethod,
+                         const std::string& methodDescriptor,
+                         const char* preferredField,
+                         const std::string& fieldDescriptor,
+                         const char* kind,
+                         std::initializer_list<const char*> genericNeedles,
+                         CachedObjectMember& cached) {
+    if (!cached.resolved) {
+        cached.method = preferredMethod
+            ? tryMethodByName(env, klass, preferredMethod,
+                              methodDescriptor.c_str(), false)
+            : nullptr;
+        if (!cached.method) {
+            cached.field = resolveField(
+                env, jvmti, klass, preferredField, fieldDescriptor, false, kind,
+                genericNeedles);
+        }
+        cached.resolved = cached.method || cached.field;
+    }
+
+    if (cached.method) {
+        jobject value = env->CallObjectMethod(object, cached.method);
+        if (!env->ExceptionCheck() && value) return value;
+        if (env->ExceptionCheck()) env->ExceptionClear();
+        if (value) env->DeleteLocalRef(value);
+    }
+
+    if (!cached.field) return nullptr;
+    jobject value = env->GetObjectField(object, cached.field);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        if (value) env->DeleteLocalRef(value);
+        return nullptr;
+    }
+    return value;
+}
+
+ManagerCollections resolveManagerCollections(JNIEnv* env, jvmtiEnv* jvmti,
+                                             jobject manager) {
+    static CachedObjectMember catalogMember;
+    static CachedObjectMember ownedMember;
+    static CachedObjectMember serialMember;
+    ManagerCollections collections;
+    if (!manager || !jvmti) return collections;
+    jclass managerClass = env->GetObjectClass(manager);
+    if (!managerClass || env->ExceptionCheck()) {
+        if (env->ExceptionCheck()) env->ExceptionClear();
+        return collections;
+    }
+
+    collections.catalog = readObjectMember(
+        env, jvmti, manager, managerClass,
+        "HCOCCIOOROHIHHRHCCHHRROIOOOHRO", "()Ljava/util/Map;",
+        nullptr, "Ljava/util/Map;", "cosmetic_catalog_field",
+        {kCatalogCosmeticDescriptor}, catalogMember);
+    collections.owned = readObjectMember(
+        env, jvmti, manager, managerClass,
+        "IOOCHIHIHRRIRORHHRHOIORORCIHCR", "()Ljava/util/Set;",
+        nullptr, "Ljava/util/Set;", "cosmetic_owned_field", {"TT;"},
+        ownedMember);
+    collections.ownedBySerial = readObjectMember(
+        env, jvmti, manager, managerClass,
+        "OCORRRRRHRHIIORIRCIORIIOOHRORR", "()Ljava/util/Map;",
+        nullptr, "Ljava/util/Map;", "cosmetic_serial_field",
+        {"Ljava/lang/Long;", kOwnedCosmeticDescriptor}, serialMember);
+
+    env->DeleteLocalRef(managerClass);
+    return collections;
+}
+
+void releaseManagerCollections(JNIEnv* env, ManagerCollections& collections) {
+    if (collections.catalog) env->DeleteLocalRef(collections.catalog);
+    if (collections.owned) env->DeleteLocalRef(collections.owned);
+    if (collections.ownedBySerial) env->DeleteLocalRef(collections.ownedBySerial);
+    collections = {};
+}
+
+ManagerState inspectManager(JNIEnv* env, jvmtiEnv* jvmti, jobject manager) {
     ManagerState state;
     state.manager = manager;
-    jclass managerClass = env->GetObjectClass(manager);
-    if (!managerClass) {
-        clearException(env, "manager class");
-        return state;
-    }
-
-    jmethodID catalogAccessor = env->GetMethodID(
-        managerClass, "HCOCCIOOROHIHHRHCCHHRROIOOOHRO", "()Ljava/util/Map;");
-    jmethodID ownedAccessor = env->GetMethodID(
-        managerClass, "IOOCHIHIHRRIRORHHRHOIORORCIHCR", "()Ljava/util/Set;");
-    jmethodID serialAccessor = env->GetMethodID(
-        managerClass, "OCORRRRRHRHIIORIRCIORIIOOHRORR", "()Ljava/util/Map;");
-    if (clearException(env, "manager accessors") ||
-        !catalogAccessor || !ownedAccessor || !serialAccessor) {
-        env->DeleteLocalRef(managerClass);
-        return state;
-    }
-
-    jobject catalog = env->CallObjectMethod(manager, catalogAccessor);
-    jobject owned = env->CallObjectMethod(manager, ownedAccessor);
-    jobject ownedBySerial = env->CallObjectMethod(manager, serialAccessor);
-    if (!clearException(env, "manager collections")) {
-        state.catalog = collectionSize(env, catalog);
-        state.owned = collectionSize(env, owned);
-        state.ownedBySerial = collectionSize(env, ownedBySerial);
-    }
-    if (catalog) env->DeleteLocalRef(catalog);
-    if (owned) env->DeleteLocalRef(owned);
-    if (ownedBySerial) env->DeleteLocalRef(ownedBySerial);
-    env->DeleteLocalRef(managerClass);
+    ManagerCollections collections = resolveManagerCollections(env, jvmti, manager);
+    state.catalog = collectionSize(env, collections.catalog);
+    state.owned = collectionSize(env, collections.owned);
+    state.ownedBySerial = collectionSize(env, collections.ownedBySerial);
+    releaseManagerCollections(env, collections);
     return state;
 }
 
@@ -688,7 +933,7 @@ bool refreshPersistentCosmeticManager(JNIEnv* env, jvmtiEnv* jvmti) {
     std::vector<jobject> managers = findInstances(env, jvmti, managerClass);
     ManagerState selected;
     for (jobject manager : managers) {
-        ManagerState current = inspectManager(env, manager);
+        ManagerState current = inspectManager(env, jvmti, manager);
         if (current.catalog > selected.catalog) selected = current;
     }
 
@@ -744,7 +989,8 @@ ResponseCandidate selectResponse(JNIEnv* env, jclass responseClass,
     return best;
 }
 
-bool applyUnlock(JNIEnv* env, jobject manager, jclass responseClass, jobject response) {
+bool applyUnlock(JNIEnv* env, jvmtiEnv* jvmti, jobject manager,
+                 jclass responseClass, jobject response) {
     jmethodID toBuilder = env->GetMethodID(
         responseClass, "toBuilder", (std::string("()") + kLoginResponseBuilderDescriptor).c_str());
     if (clearException(env, "LoginResponse.toBuilder lookup") || !toBuilder) return false;
@@ -781,8 +1027,9 @@ bool applyUnlock(JNIEnv* env, jobject manager, jclass responseClass, jobject res
     const std::string handlerDescriptor =
         std::string("(") + kLoginResponseDescriptor + ")V";
     jmethodID handler = managerClass
-        ? env->GetMethodID(managerClass, "HRCORCCCHOCRCICCRHOHHICOIIICII",
-                           handlerDescriptor.c_str())
+        ? resolveMethod(env, jvmti, managerClass,
+                        "HRCORCCCHOCRCICCRHOHHICOIIICII",
+                        handlerDescriptor, false, "cosmetic_login_handler")
         : nullptr;
     if (clearException(env, "manager login handler") || !handler) {
         if (managerClass) env->DeleteLocalRef(managerClass);
@@ -801,39 +1048,32 @@ bool applyUnlock(JNIEnv* env, jobject manager, jclass responseClass, jobject res
     return !failed;
 }
 
-bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
+bool populateOwnedFromCatalog(JNIEnv* env, jvmtiEnv* jvmti, jobject manager) {
     jclass managerClass = env->GetObjectClass(manager);
     if (!managerClass) {
         clearException(env, "direct manager class");
         return false;
     }
 
-    jmethodID catalogAccessor = env->GetMethodID(
-        managerClass, "HCOCCIOOROHIHHRHCCHHRROIOOOHRO", "()Ljava/util/Map;");
-    jmethodID ownedAccessor = env->GetMethodID(
-        managerClass, "IOOCHIHIHRRIRORHHRHOIORORCIHCR", "()Ljava/util/Set;");
-    jmethodID serialAccessor = env->GetMethodID(
-        managerClass, "OCORRRRRHRHIIORIRCIORIIOOHRORR", "()Ljava/util/Map;");
     const std::string factoryDescriptor =
         std::string("(ILjava/lang/String;") + kCosmeticTypeDescriptor +
         "Ljava/lang/String;ZJLjava/time/Instant;Ljava/util/List;Ljava/util/List;Z" +
         kItemMaterialDescriptor + kOwnedMetadataDescriptor + ")" + kOwnedCosmeticDescriptor;
-    jmethodID factory = env->GetMethodID(
-        managerClass, "RCRROIORHICCOHOIIIRROHIORIIIHC", factoryDescriptor.c_str());
-    if (clearException(env, "direct manager methods") ||
-        !catalogAccessor || !ownedAccessor || !serialAccessor || !factory) {
+    jmethodID factory = resolveMethod(
+        env, jvmti, managerClass, "RCRROIORHICCOHOIIIRROHIORIIIHC",
+        factoryDescriptor, false, "cosmetic_owned_factory");
+    if (clearException(env, "direct manager methods") || !factory) {
         env->DeleteLocalRef(managerClass);
         return false;
     }
 
-    jobject catalog = env->CallObjectMethod(manager, catalogAccessor);
-    jobject targetOwned = env->CallObjectMethod(manager, ownedAccessor);
-    jobject targetSerials = env->CallObjectMethod(manager, serialAccessor);
+    ManagerCollections managerCollections = resolveManagerCollections(env, jvmti, manager);
+    jobject catalog = managerCollections.catalog;
+    jobject targetOwned = managerCollections.owned;
+    jobject targetSerials = managerCollections.ownedBySerial;
     if (clearException(env, "direct manager collections") ||
         !catalog || !targetOwned || !targetSerials) {
-        if (catalog) env->DeleteLocalRef(catalog);
-        if (targetOwned) env->DeleteLocalRef(targetOwned);
-        if (targetSerials) env->DeleteLocalRef(targetSerials);
+        releaseManagerCollections(env, managerCollections);
         env->DeleteLocalRef(managerClass);
         return false;
     }
@@ -844,10 +1084,11 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
     jclass optionalClass = env->FindClass("java/util/Optional");
     jclass hashSetClass = env->FindClass("java/util/HashSet");
     jclass hashMapClass = env->FindClass("java/util/HashMap");
+    jclass collectionsClass = env->FindClass("java/util/Collections");
     jclass longClass = env->FindClass("java/lang/Long");
     if (clearException(env, "direct Java collection classes") ||
         !mapClass || !collectionClass || !iteratorClass || !optionalClass ||
-        !hashSetClass || !hashMapClass || !longClass) {
+        !hashSetClass || !hashMapClass || !collectionsClass || !longClass) {
         env->DeleteLocalRef(catalog);
         env->DeleteLocalRef(targetOwned);
         env->DeleteLocalRef(targetSerials);
@@ -874,13 +1115,15 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
     jmethodID optionalGet = env->GetMethodID(optionalClass, "get", "()Ljava/lang/Object;");
     jmethodID hashSetCtor = env->GetMethodID(hashSetClass, "<init>", "()V");
     jmethodID hashMapCtor = env->GetMethodID(hashMapClass, "<init>", "()V");
+    jmethodID emptyListMethod = env->GetStaticMethodID(
+        collectionsClass, "emptyList", "()Ljava/util/List;");
     jmethodID longValueOf = env->GetStaticMethodID(
         longClass, "valueOf", "(J)Ljava/lang/Long;");
     if (clearException(env, "direct collection methods") ||
         !mapValues || !mapClear || !mapPutAll || !mapPut || !collectionIterator ||
         !collectionClear || !collectionAdd || !collectionAddAll || !iteratorHasNext ||
         !iteratorNext || !optionalIsPresent || !optionalGet || !hashSetCtor ||
-        !hashMapCtor || !longValueOf) {
+        !hashMapCtor || !emptyListMethod || !longValueOf) {
         env->DeleteLocalRef(catalog);
         env->DeleteLocalRef(targetOwned);
         env->DeleteLocalRef(targetSerials);
@@ -890,10 +1133,11 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
 
     jobject stagedOwned = env->NewObject(hashSetClass, hashSetCtor);
     jobject stagedSerials = env->NewObject(hashMapClass, hashMapCtor);
+    jobject emptyList = env->CallStaticObjectMethod(collectionsClass, emptyListMethod);
     jobject values = env->CallObjectMethod(catalog, mapValues);
     jobject iterator = values ? env->CallObjectMethod(values, collectionIterator) : nullptr;
     if (clearException(env, "direct staging setup") ||
-        !stagedOwned || !stagedSerials || !values || !iterator) {
+        !stagedOwned || !stagedSerials || !emptyList || !values || !iterator) {
         if (iterator) env->DeleteLocalRef(iterator);
         if (values) env->DeleteLocalRef(values);
         if (stagedOwned) env->DeleteLocalRef(stagedOwned);
@@ -912,14 +1156,13 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
     jmethodID getId = nullptr;
     jmethodID getName = nullptr;
     jmethodID getType = nullptr;
-    jmethodID getVariant = nullptr;
+    jmethodID getResource = nullptr;
+    jfieldID resourceField = nullptr;
     jmethodID getHidden = nullptr;
     jmethodID getTags = nullptr;
     jmethodID getColors = nullptr;
     jmethodID getAnimated = nullptr;
     jmethodID getMaterial = nullptr;
-    jclass ownedClass = nullptr;
-    jmethodID getSerial = nullptr;
 
     while (env->CallBooleanMethod(iterator, iteratorHasNext) == JNI_TRUE) {
         if (clearException(env, "catalog iterator hasNext")) {
@@ -939,25 +1182,44 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
 
         if (!catalogClass) {
             catalogClass = static_cast<jclass>(env->NewGlobalRef(env->GetObjectClass(item)));
-            getId = env->GetMethodID(catalogClass, "getId", "()I");
-            getName = env->GetMethodID(catalogClass, "getName", "()Ljava/lang/String;");
-            getType = env->GetMethodID(
-                catalogClass, "IHCIHHCIOROIHRIORCIRHRHICHRORO", "()Ljava/util/Optional;");
-            getVariant = env->GetMethodID(
-                catalogClass, "COOOCICROIRHRCHCCHHHRHCRHOHHOI", "()Ljava/lang/String;");
-            getHidden = env->GetMethodID(
-                catalogClass, "CIOROHCHHHHICORRHRIOCCCRCRHRIR", "()Z");
-            getTags = env->GetMethodID(
-                catalogClass, "RRHCHCCIRHRRROHOROHIRHRHIOHCHH", "()Ljava/util/List;");
-            getColors = env->GetMethodID(catalogClass, "getColors", "()Ljava/util/List;");
-            getAnimated = env->GetMethodID(
-                catalogClass, "OCROCHROOCCOCOHOICHIHHORIIHROR", "()Z");
+            getId = resolveMethod(env, jvmti, catalogClass, "getId", "()I", false,
+                                  "catalog_id_getter");
+            getName = resolveMethod(env, jvmti, catalogClass, "getName",
+                                    "()Ljava/lang/String;", false,
+                                    "catalog_name_getter");
+            getType = resolveMethod(env, jvmti, catalogClass,
+                                    "IHCIHHCIOROIHRIORCIRHRHICHRORO",
+                                    "()Ljava/util/Optional;", false,
+                                    "catalog_type_getter");
+            getResource = tryMethodByName(
+                env, catalogClass, "COOOCICROIRHRCHCCHHHRHCRHOHHOI",
+                "()Ljava/lang/String;", false);
+            if (!getResource) {
+                resourceField = tryFieldByName(
+                    env, catalogClass, "resource", "Ljava/lang/String;", false);
+                if (resourceField) {
+                    logResolutionOnce("catalog_resource_field", "resource",
+                                      "Ljava/lang/String;");
+                }
+            }
+            getHidden = tryMethodByName(env, catalogClass,
+                                        "CIOROHCHHHHICORRHRIOCCCRCRHRIR", "()Z", false);
+            getColors = tryMethodByName(
+                env, catalogClass, "getColors", "()Ljava/util/List;", false);
+            getTags = tryMethodByName(env, catalogClass,
+                                      "RRHCHCCIRHRRROHOROHIRHRHIOHCHH",
+                                      "()Ljava/util/List;", false);
+            getAnimated = tryMethodByName(env, catalogClass,
+                                          "OCROCHROOCCOCOHOICHIHHORIIHROR",
+                                          "()Z", false);
             const std::string materialGetter = std::string("()") + kItemMaterialDescriptor;
-            getMaterial = env->GetMethodID(
-                catalogClass, "COOOHHHHHOOCCIIOOICHIOIHOOHRIR", materialGetter.c_str());
+            getMaterial = resolveMethod(env, jvmti, catalogClass,
+                                        "COOOHHHHHOOCCIIOOICHIOIHOOHRIR",
+                                        materialGetter, false,
+                                        "catalog_material_getter");
             if (clearException(env, "catalog item methods") ||
-                !getId || !getName || !getType || !getVariant || !getHidden ||
-                !getTags || !getColors || !getAnimated || !getMaterial) {
+                !getId || !getName || !getType ||
+                (!getResource && !resourceField) || !getMaterial) {
                 env->PopLocalFrame(nullptr);
                 failed = true;
                 break;
@@ -982,11 +1244,17 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
         const jint id = env->CallIntMethod(item, getId);
         jobject name = env->CallObjectMethod(item, getName);
         jobject type = env->CallObjectMethod(typeOptional, optionalGet);
-        jobject variant = env->CallObjectMethod(item, getVariant);
-        const jboolean hidden = env->CallBooleanMethod(item, getHidden);
-        jobject tags = env->CallObjectMethod(item, getTags);
-        jobject colors = env->CallObjectMethod(item, getColors);
-        const jboolean animated = env->CallBooleanMethod(item, getAnimated);
+        jobject resource = getResource
+            ? env->CallObjectMethod(item, getResource)
+            : env->GetObjectField(item, resourceField);
+        const jboolean hidden = getHidden
+            ? env->CallBooleanMethod(item, getHidden) : JNI_FALSE;
+        jobject tags = getTags
+            ? env->CallObjectMethod(item, getTags) : env->NewLocalRef(emptyList);
+        jobject colors = getColors
+            ? env->CallObjectMethod(item, getColors) : env->NewLocalRef(emptyList);
+        const jboolean animated = getAnimated
+            ? env->CallBooleanMethod(item, getAnimated) : JNI_FALSE;
         jobject material = env->CallObjectMethod(item, getMaterial);
         if (clearException(env, "catalog item values")) {
             env->PopLocalFrame(nullptr);
@@ -995,7 +1263,7 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
         }
 
         jobject owned = env->CallObjectMethod(
-            manager, factory, id, name, type, variant, hidden, static_cast<jlong>(-1),
+            manager, factory, id, name, type, resource, hidden, static_cast<jlong>(-1),
             nullptr, tags, colors, animated, material, nullptr);
         if (clearException(env, "owned cosmetic factory") || !owned) {
             env->PopLocalFrame(nullptr);
@@ -1003,19 +1271,11 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
             break;
         }
 
-        if (!ownedClass) {
-            ownedClass = static_cast<jclass>(env->NewGlobalRef(env->GetObjectClass(owned)));
-            getSerial = env->GetMethodID(
-                ownedClass, "HRHCIHHIIIRCICOICIICHIHCIRRHII", "()J");
-            if (clearException(env, "owned serial method") || !getSerial) {
-                env->PopLocalFrame(nullptr);
-                failed = true;
-                break;
-            }
-        }
-
-        const jlong serial = env->CallLongMethod(owned, getSerial);
-        jobject boxedSerial = env->CallStaticObjectMethod(longClass, longValueOf, serial);
+        // Lunar indexes this collection by the cosmetic id (the first factory
+        // argument). Owned objects also expose an expiry long, so selecting a
+        // ()J method by shape can collapse every entry onto the shared -1 key.
+        jobject boxedSerial = env->CallStaticObjectMethod(
+            longClass, longValueOf, static_cast<jlong>(id));
         env->CallBooleanMethod(stagedOwned, collectionAdd, owned);
         jobject previous = env->CallObjectMethod(stagedSerials, mapPut, boxedSerial, owned);
         if (previous) env->DeleteLocalRef(previous);
@@ -1055,11 +1315,11 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
     }
 
     if (catalogClass) env->DeleteGlobalRef(catalogClass);
-    if (ownedClass) env->DeleteGlobalRef(ownedClass);
     env->DeleteLocalRef(iterator);
     env->DeleteLocalRef(values);
     env->DeleteLocalRef(stagedOwned);
     env->DeleteLocalRef(stagedSerials);
+    env->DeleteLocalRef(emptyList);
     env->DeleteLocalRef(catalog);
     env->DeleteLocalRef(targetOwned);
     env->DeleteLocalRef(targetSerials);
@@ -1069,6 +1329,7 @@ bool populateOwnedFromCatalog(JNIEnv* env, jobject manager) {
     env->DeleteLocalRef(optionalClass);
     env->DeleteLocalRef(hashSetClass);
     env->DeleteLocalRef(hashMapClass);
+    env->DeleteLocalRef(collectionsClass);
     env->DeleteLocalRef(longClass);
     env->DeleteLocalRef(managerClass);
     return stagingValid && !failed;
@@ -1945,40 +2206,61 @@ bool restoreSelection(JNIEnv* env, const SelectionState& selection) {
 }
 
 void monitorSelection(JNIEnv* env, jvmtiEnv* jvmti) {
+    constexpr DWORD kMonitorIntervalMs = 1000;
+    constexpr unsigned int kManagerHealthPeriod = 10;
+    constexpr unsigned int kRecoveryProbePeriod = 5;
+    constexpr unsigned int kDeferredPreviewProbe = 5;
     SelectionState previous = g_hasSavedSelection ? g_savedSelection : SelectionState{};
     bool started = false;
     bool waitingLogged = false;
     bool lastComplete = true;
+    bool previewProbePending = g_persistentPlayerCosmeticState == nullptr;
     unsigned int iteration = 0;
+
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+    logLine("SELECTION_MONITOR_POLICY interval_ms=" +
+            std::to_string(kMonitorIntervalMs) +
+            " steady_heap_scan=0 preview_probe=deferred_once");
 
     for (;;) {
         if (env->PushLocalFrame(256) != JNI_OK) {
             logLine("SELECTION_LOCAL_FRAME_FAILED");
-            Sleep(750);
+            Sleep(kMonitorIntervalMs);
             continue;
         }
         ++iteration;
         bool managerRebound = false;
-        if (iteration == 1 || iteration % 8 == 0) {
+        if (!g_persistentCosmeticManager &&
+            (iteration == 1 || iteration % kRecoveryProbePeriod == 0)) {
             managerRebound = refreshPersistentCosmeticManager(env, jvmti);
             if (managerRebound) g_localCosmeticSelectionInitialized = false;
-            if (g_persistentCosmeticManager) {
-                const ManagerState live = inspectManager(env, g_persistentCosmeticManager);
-                const bool ownedLooksReset = live.catalog > 0 && live.owned >= 0 &&
-                    live.owned < (live.catalog * 3) / 4;
-                if (ownedLooksReset) {
-                    const bool repaired = populateOwnedFromCatalog(
-                        env, g_persistentCosmeticManager);
-                    logLine("COSMETIC_UNLOCK_REFRESH rebound=" +
-                            std::to_string(managerRebound) +
-                            " owned_before=" + std::to_string(live.owned) +
-                            " repaired=" + std::to_string(repaired));
+        }
+        if (g_persistentCosmeticManager &&
+            (iteration == 1 || iteration % kManagerHealthPeriod == 0)) {
+            ManagerState live = inspectManager(
+                env, jvmti, g_persistentCosmeticManager);
+            if (live.catalog <= 0 || live.owned < 0 || live.ownedBySerial < 0) {
+                managerRebound = refreshPersistentCosmeticManager(env, jvmti);
+                if (managerRebound) {
+                    g_localCosmeticSelectionInitialized = false;
+                    live = inspectManager(env, jvmti, g_persistentCosmeticManager);
                 }
+            }
+            const bool ownedLooksReset = live.catalog > 0 && live.owned >= 0 &&
+                live.owned < (live.catalog * 3) / 4;
+            if (ownedLooksReset) {
+                const bool repaired = populateOwnedFromCatalog(
+                    env, jvmti, g_persistentCosmeticManager);
+                logLine("COSMETIC_UNLOCK_REFRESH rebound=" +
+                        std::to_string(managerRebound) +
+                        " owned_before=" + std::to_string(live.owned) +
+                        " repaired=" + std::to_string(repaired));
             }
         }
 
         bool localPlayerAvailable = g_persistentLocalPlayerUuid != nullptr;
-        if (iteration == 1 || iteration % 8 == 0) {
+        if (!localPlayerAvailable &&
+            (iteration == 1 || iteration % kRecoveryProbePeriod == 0)) {
             localPlayerAvailable = bindLocalPlayerUuid(env, jvmti);
         }
 
@@ -1997,17 +2279,23 @@ void monitorSelection(JNIEnv* env, jvmtiEnv* jvmti) {
             waitingLogged = false;
         }
 
-        if ((iteration == 1 || iteration % 8 == 0) &&
-            bindPlayerCosmeticState(env, jvmti, true) &&
-            g_persistentCosmeticManager) {
-            const std::set<jlong> desired = g_hasSavedSelection
-                ? g_savedSelection.cosmetics : std::set<jlong>{};
-            const bool previewRestored = restorePlayerCosmeticSelection(
-                env, g_persistentCosmeticManager,
-                g_persistentPlayerCosmeticState, desired);
-            logLine("LOADOUT_PREVIEW_REFRESH requested=" +
-                    std::to_string(desired.size()) +
-                    " valid=" + std::to_string(previewRestored));
+        // Retry discovery once for a preview model created shortly after
+        // injection. Further heap walks happen only after a real selection
+        // change; periodic JVMTI walks force JVM safepoints and stall frames.
+        if (previewProbePending && iteration == kDeferredPreviewProbe) {
+            previewProbePending = false;
+            if (!g_persistentPlayerCosmeticState &&
+                bindPlayerCosmeticState(env, jvmti) &&
+                g_persistentCosmeticManager) {
+                const std::set<jlong> desired = g_hasSavedSelection
+                    ? g_savedSelection.cosmetics : std::set<jlong>{};
+                const bool previewRestored = restorePlayerCosmeticSelection(
+                    env, g_persistentCosmeticManager,
+                    g_persistentPlayerCosmeticState, desired);
+                logLine("LOADOUT_PREVIEW_REFRESH requested=" +
+                        std::to_string(desired.size()) +
+                        " valid=" + std::to_string(previewRestored));
+            }
         }
 
         SelectionState current = previous;
@@ -2035,7 +2323,8 @@ void monitorSelection(JNIEnv* env, jvmtiEnv* jvmti) {
                 g_hasSavedSelection = true;
                 started = true;
                 lastComplete = true;
-                logLine("SELECTION_MONITOR_STARTED interval_ms=750 complete=1");
+                logLine("SELECTION_MONITOR_STARTED interval_ms=" +
+                        std::to_string(kMonitorIntervalMs) + " complete=1");
             }
         } else if (!status.complete) {
             // A transient JNI/manager failure must not be interpreted as a
@@ -2056,13 +2345,24 @@ void monitorSelection(JNIEnv* env, jvmtiEnv* jvmti) {
                     previous = std::move(current);
                     g_savedSelection = previous;
                     g_hasSavedSelection = true;
+                    if (!g_persistentPlayerCosmeticState &&
+                        g_persistentCosmeticManager &&
+                        bindPlayerCosmeticState(env, jvmti)) {
+                        const bool previewRestored = restorePlayerCosmeticSelection(
+                            env, g_persistentCosmeticManager,
+                            g_persistentPlayerCosmeticState,
+                            g_savedSelection.cosmetics);
+                        logLine("LOADOUT_PREVIEW_CHANGE_RESTORE requested=" +
+                                std::to_string(g_savedSelection.cosmetics.size()) +
+                                " valid=" + std::to_string(previewRestored));
+                    }
                 } else {
                     logLine("SELECTION_SAVE_FAILED reason=CHANGED");
                 }
             }
         }
         env->PopLocalFrame(nullptr);
-        Sleep(750);
+        Sleep(kMonitorIntervalMs);
     }
 }
 
@@ -2074,9 +2374,9 @@ bool unlockEmotes(JNIEnv* env, jvmtiEnv* jvmti) {
     if (!managerClass || !wrapperClass || !equippedWrapperClass) return false;
 
     jobject manager = firstInstance(env, jvmti, managerClass);
-    jfieldID catalogField = env->GetStaticFieldID(
-        managerClass, "CIHHOOROCCRIOHCHORROHOORHCOORR",
-        "Lcom/google/common/collect/BiMap;");
+    jfieldID catalogField = resolveField(
+        env, jvmti, managerClass, "CIHHOOROCCRIOHCHORROHOORHCOORR",
+        "Lcom/google/common/collect/BiMap;", true, "emote_catalog_field");
     jobject catalog = catalogField
         ? env->GetStaticObjectField(managerClass, catalogField)
         : nullptr;
@@ -2104,12 +2404,15 @@ bool unlockEmotes(JNIEnv* env, jvmtiEnv* jvmti) {
         kEmoteMetadataDescriptor + ")V";
     jmethodID wrapperCtor = env->GetMethodID(
         wrapperClass, "<init>", wrapperCtorDescriptor.c_str());
-    jmethodID setOwned = env->GetMethodID(
-        managerClass, "OIRCHOOIOHIHCOCIOCRRIRROROOIOO", "(Ljava/util/List;)V");
-    jmethodID getOwned = env->GetMethodID(
-        managerClass, "RRHOICCICRIICHHOCCICIIHCCROOCC", "()Ljava/util/List;");
-    jmethodID setOwnsPlus = env->GetMethodID(
-        managerClass, "OOOOOOROIIRHCIORCIOHRCIROIHIHC", "(Z)V");
+    jmethodID setOwned = resolveMethod(
+        env, jvmti, managerClass, "OIRCHOOIOHIHCOCIOCRRIRROROOIOO",
+        "(Ljava/util/List;)V", false, "emote_owned_setter");
+    jmethodID getOwned = resolveMethod(
+        env, jvmti, managerClass, "RRHOICCICRIICHHOCCICIIHCCROOCC",
+        "()Ljava/util/List;", false, "emote_owned_getter");
+    jmethodID setOwnsPlus = resolveMethod(
+        env, jvmti, managerClass, "OOOOOOROIIRHCIORCIOHRCIROIHIHC",
+        "(Z)V", false, "emote_plus_setter");
     if (clearException(env, "emote methods") || !keySet || !iterator || !hasNext ||
         !next || !intValue || !listCtor || !add || !wrapperCtor || !setOwned ||
         !getOwned || !setOwnsPlus) return false;
@@ -2179,10 +2482,13 @@ bool unlockJams(JNIEnv* env, jvmtiEnv* jvmti) {
     jobject manager = firstInstance(env, jvmti, managerClass);
     if (!manager) return false;
 
-    jmethodID getCatalog = env->GetStaticMethodID(
-        managerClass, "RCRIHOIIOICOORCRHRCHIICHRHORRI", "()Ljava/util/Map;");
-    jmethodID newBuilder = env->GetStaticMethodID(
-        ownedClass, "newBuilder", (std::string("()") + kOwnedJamBuilderDescriptor).c_str());
+    jmethodID getCatalog = resolveMethod(
+        env, jvmti, managerClass, "RCRIHOIIOICOORCRHRCHIICHRHORRI",
+        "()Ljava/util/Map;", true, "jam_catalog_getter");
+    jmethodID newBuilder = resolveMethod(
+        env, jvmti, ownedClass, "newBuilder",
+        std::string("()") + kOwnedJamBuilderDescriptor, true,
+        "jam_builder_factory");
     if (clearException(env, "jam roots") || !getCatalog || !newBuilder) return false;
     jobject catalog = env->CallStaticObjectMethod(managerClass, getCatalog);
     if (clearException(env, "jam catalog") || !catalog) return false;
@@ -2206,10 +2512,12 @@ bool unlockJams(JNIEnv* env, jvmtiEnv* jvmti) {
         ? env->GetMethodID(arrayListClass, "<init>", "()V") : nullptr;
     jmethodID add = collectionClass
         ? env->GetMethodID(collectionClass, "add", "(Ljava/lang/Object;)Z") : nullptr;
-    jmethodID setOwned = env->GetMethodID(
-        managerClass, "OHOOIRHHHROHOCIIOIOCHOHCCRROIO", "(Ljava/util/List;)V");
-    jmethodID getOwned = env->GetMethodID(
-        managerClass, "CIROROCOIRIOROICHOIOCRRICIOICI", "()Ljava/util/List;");
+    jmethodID setOwned = resolveMethod(
+        env, jvmti, managerClass, "OHOOIRHHHROHOCIIOIOCHOHCCRROIO",
+        "(Ljava/util/List;)V", false, "jam_owned_setter");
+    jmethodID getOwned = resolveMethod(
+        env, jvmti, managerClass, "CIROROCOIRIOROICHOIOCRRICIOICI",
+        "()Ljava/util/List;", false, "jam_owned_getter");
     if (clearException(env, "jam Java methods") || !keySet || !iterator || !hasNext ||
         !next || !intValue || !listCtor || !add || !setOwned || !getOwned) return false;
 
@@ -2280,15 +2588,18 @@ bool unlockSprays(JNIEnv* env, jvmtiEnv* jvmti) {
     jobject manager = firstInstance(env, jvmti, managerClass);
     if (!manager) return false;
 
-    jmethodID getCatalog = env->GetMethodID(
-        managerClass, "RHRRICOCRHCIIRHOCOIRRHCOHIHCCH",
-        "()Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;");
-    jmethodID getOwned = env->GetMethodID(
-        managerClass, "HIIOIIOCIRCHOIHCOORHOHHRRCRCHH",
-        "()Lit/unimi/dsi/fastutil/objects/Object2LongMap;");
-    jmethodID setOwned = env->GetMethodID(
-        managerClass, "RCRROIORHICCOHOIIIRROHIORIIIHC",
-        "(Lit/unimi/dsi/fastutil/objects/Object2LongMap;)V");
+    jmethodID getCatalog = resolveMethod(
+        env, jvmti, managerClass, "RHRRICOCRHCIIRHOCOIRRHCOHIHCCH",
+        "()Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;", false,
+        "spray_catalog_getter");
+    jmethodID getOwned = resolveMethod(
+        env, jvmti, managerClass, "HIIOIIOCIRCHOIHCOORHOHHRRCRCHH",
+        "()Lit/unimi/dsi/fastutil/objects/Object2LongMap;", false,
+        "spray_owned_getter");
+    jmethodID setOwned = resolveMethod(
+        env, jvmti, managerClass, "RCRROIORHICCOHOIIIRROHIORIIIHC",
+        "(Lit/unimi/dsi/fastutil/objects/Object2LongMap;)V", false,
+        "spray_owned_setter");
     if (clearException(env, "spray accessors") || !getCatalog || !getOwned || !setOwned) {
         return false;
     }
@@ -2370,16 +2681,20 @@ bool unlockBadges(JNIEnv* env, jvmtiEnv* jvmti) {
     jobject manager = firstInstance(env, jvmti, managerClass);
     if (!manager) return false;
 
-    jmethodID getCatalog = env->GetMethodID(
-        managerClass, "OORHOCIOCIIROOOHHCRCHCCOICOCHH", "()Ljava/util/Map;");
+    jmethodID getCatalog = resolveMethod(
+        env, jvmti, managerClass, "OORHOCIOCIIROOOHHCRCHCCOICOCHH",
+        "()Ljava/util/Map;", false, "badge_catalog_getter");
     const std::string converterDescriptor =
         std::string("(") + kBadgeMetadataDescriptor + ")" + kBadgeWrapperDescriptor;
-    jmethodID convert = env->GetStaticMethodID(
-        wrapperClass, "RCRROIORHICCOHOIIIRROHIORIIIHC", converterDescriptor.c_str());
-    jmethodID setOwned = env->GetMethodID(
-        managerClass, "CIHROHOORRHCROOIRRCROCRIHROHIH", "(Ljava/util/List;)V");
-    jfieldID ownedField = env->GetFieldID(
-        managerClass, "CCRHORCHOCCCOCOOCRRRRORHOHOHRI", "Ljava/util/List;");
+    jmethodID convert = resolveMethod(
+        env, jvmti, wrapperClass, "RCRROIORHICCOHOIIIRROHIORIIIHC",
+        converterDescriptor, true, "badge_wrapper_factory");
+    jmethodID setOwned = resolveMethod(
+        env, jvmti, managerClass, "CIHROHOORRHCROOIRRCROCRIHROHIH",
+        "(Ljava/util/List;)V", false, "badge_owned_setter");
+    jfieldID ownedField = resolveField(
+        env, jvmti, managerClass, "CCRHORCHOCCCOCOOCRRRRORHOHOHRI",
+        "Ljava/util/List;", false, "badge_owned_field", {kBadgeWrapperDescriptor});
     if (clearException(env, "badge accessors") || !getCatalog || !convert ||
         !setOwned || !ownedField) return false;
     jobject catalog = env->CallObjectMethod(manager, getCatalog);
@@ -2504,19 +2819,23 @@ bool unlockLunarPlus(JNIEnv* env, jvmtiEnv* jvmti,
         ? env->GetMethodID(loginBuilderClass, "build",
                            (std::string("()") + kLoginResponseDescriptor).c_str())
         : nullptr;
-    jmethodID handleLogin = env->GetMethodID(
-        managerClass, "RCRHHRIOICOORCIRCHOHHRHHIRRCRI",
-        (std::string("(") + kLoginResponseDescriptor + ")V").c_str());
-    jmethodID getColors = env->GetMethodID(
-        managerClass, "IOOCHIHIHRRIRORHHRHOIORORCIHCR", "()Ljava/util/Set;");
-    jmethodID isActive = env->GetMethodID(
-        managerClass, "COOIHIRICCHICOOCORRCOCCHHIRHIC", "()Z");
-    jmethodID refreshProvider = env->GetMethodID(
-        managerClass, "IOHRRCHCRIHRIOOHOHRIRHCHIROCRO", "()V");
+    jmethodID handleLogin = resolveMethod(
+        env, jvmti, managerClass, "RCRHHRIOICOORCIRCHOHHRHHIRRCRI",
+        std::string("(") + kLoginResponseDescriptor + ")V", false,
+        "lunar_plus_login_handler");
+    jmethodID getColors = resolveMethod(
+        env, jvmti, managerClass, "IOOCHIHIHRRIRORHHRHOIORORCIHCR",
+        "()Ljava/util/Set;", false, "lunar_plus_colors_getter");
+    jmethodID isActive = resolveMethod(
+        env, jvmti, managerClass, "COOIHIRICCHICOOCORRCOCCHHIRHIC",
+        "()Z", false, "lunar_plus_active_getter");
+    // Provider refresh has several same-shaped siblings. Only call the known
+    // name; the login handler itself is the authoritative state mutation.
+    jmethodID refreshProvider = tryMethodByName(
+        env, managerClass, "IOHRRCHCRIHRIOOHOHRIRHCHIROCRO", "()V", false);
     if (clearException(env, "lunar plus methods") || !available || !loginBuilder ||
         !listCtor || !add || !addAll || !listGet || !clearColors || !addAllColors ||
-        !setPlusColor || !buildLogin || !handleLogin || !getColors || !isActive ||
-        !refreshProvider) {
+        !setPlusColor || !buildLogin || !handleLogin || !getColors || !isActive) {
         return false;
     }
 
@@ -2633,8 +2952,12 @@ bool unlockLunarPlus(JNIEnv* env, jvmtiEnv* jvmti,
     env->CallVoidMethod(manager, handleLogin, patched);
     if (clearException(env, "lunar plus response commit")) return false;
     replaceGlobalRef(env, g_persistentLoginResponse, patched);
-    env->CallVoidMethod(manager, refreshProvider);
-    if (clearException(env, "lunar plus provider refresh")) return false;
+    if (refreshProvider) {
+        env->CallVoidMethod(manager, refreshProvider);
+        if (clearException(env, "lunar plus provider refresh")) return false;
+    } else {
+        logResolutionOnce("lunar_plus_provider_refresh", "skipped", "()V");
+    }
     jobject verifiedColors = env->CallObjectMethod(manager, getColors);
     const jint verified = collectionSize(env, verifiedColors);
     const jboolean active = env->CallBooleanMethod(manager, isActive);
@@ -2776,7 +3099,7 @@ void runAgent() {
         std::vector<jobject> responses = findInstances(env, jvmti, responseClass);
         ManagerState selectedManager;
         for (jobject manager : managers) {
-            ManagerState current = inspectManager(env, manager);
+            ManagerState current = inspectManager(env, jvmti, manager);
             if (current.catalog > selectedManager.catalog) selectedManager = current;
         }
         ResponseCandidate response = selectResponse(env, responseClass, responses);
@@ -2799,14 +3122,16 @@ void runAgent() {
         bool applied = false;
         const char* path = "none";
         if (selectedManager.manager && selectedManager.catalog > 0 && responseIsLive) {
-            applied = applyUnlock(env, selectedManager.manager, responseClass, response.object);
+            applied = applyUnlock(
+                env, jvmti, selectedManager.manager, responseClass, response.object);
             path = "login_response";
         } else if (selectedManager.manager && selectedManager.catalog > 0) {
-            applied = populateOwnedFromCatalog(env, selectedManager.manager);
+            applied = populateOwnedFromCatalog(env, jvmti, selectedManager.manager);
             path = "direct_catalog";
         }
         if (applied) {
-            const ManagerState verified = inspectManager(env, selectedManager.manager);
+            const ManagerState verified = inspectManager(
+                env, jvmti, selectedManager.manager);
             const bool countLooksValid = verified.owned > 0 &&
                 verified.ownedBySerial == verified.owned &&
                 verified.owned >= (verified.catalog * 3) / 4;

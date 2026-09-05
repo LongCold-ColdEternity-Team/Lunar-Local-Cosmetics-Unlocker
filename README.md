@@ -2,7 +2,12 @@
 
 开发者：ColdEternity Team
 
-当前版本：`v1.0.0`
+当前版本：`v1.1.0`
+
+## v1.1.0 更新
+
+- 修复选择状态重复保存造成的游戏卡顿：后台仅在完整状态实际变化时写入配置，并降低周期性 JVM 检查开销。
+- 修复部分用户无法注入的问题：运行时成员解析增加按描述符和字段泛型的回退，目标进程检测与组件状态验证更加稳健。
 
 原始仓库：<https://github.com/LongCold-ColdEternity-Team/Lunar-Local-Cosmetics-Unlocker>
 
@@ -70,7 +75,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 - `bin\LunarUnlockInjector.exe`，命令行调试器
 - `dist\LunarUnlockUI.exe`，内嵌 DLL 的单文件 UI
 
-版本号统一定义在 `resource.h`，当前为 `1.0.0`。
+版本号统一定义在 `resource.h`，当前为 `1.1.0`。
 
 ## 二次修改与分发
 
