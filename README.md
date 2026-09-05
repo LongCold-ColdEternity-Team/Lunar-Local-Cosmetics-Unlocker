@@ -2,12 +2,13 @@
 
 开发者：ColdEternity Team
 
-当前版本：`v1.1.0`
+当前版本：`v1.2.0`
 
-## v1.1.0 更新
+## v1.2.0 更新
 
 - 修复选择状态重复保存造成的游戏卡顿：后台仅在完整状态实际变化时写入配置，并降低周期性 JVM 检查开销。
 - 修复部分用户无法注入的问题：运行时成员解析增加按描述符和字段泛型的回退，目标进程检测与组件状态验证更加稳健。
+- 兼容部分客户端扩展管理器缺失或目录未加载的情况：这些分类会记录为跳过，不再阻塞 Cosmetics 主饰品解锁。
 
 原始仓库：<https://github.com/LongCold-ColdEternity-Team/Lunar-Local-Cosmetics-Unlocker>
 
@@ -36,7 +37,7 @@
 
 1. 在 Lunar Client 中启动 Minecraft 1.8.9，等待游戏主菜单完整出现。
 2. 双击运行 `dist\LunarUnlockUI.exe`。
-3. UI 检测到 `Lunar Client 1.8.9` 后，点击“注入并解锁”。界面会等待代理完成运行时校验，只有全部分类验证成功后才显示“注入成功”。
+3. UI 检测到 `Lunar Client 1.8.9` 后，点击“注入并解锁”。界面会等待代理完成运行时校验，普通饰品与可用扩展分类验证成功后显示“注入成功”；客户端不提供的扩展分类会跳过并记录到日志。
 4. 打开游戏内 Locker，检查各分类。
 
 发布版已将 DLL 嵌入 EXE。实际使用只需要 `dist\LunarUnlockUI.exe`，界面不提供 DLL 选择入口。
@@ -75,7 +76,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 - `bin\LunarUnlockInjector.exe`，命令行调试器
 - `dist\LunarUnlockUI.exe`，内嵌 DLL 的单文件 UI
 
-版本号统一定义在 `resource.h`，当前为 `1.1.0`。
+版本号统一定义在 `resource.h`，当前为 `1.2.0`。
 
 ## 二次修改与分发
 

@@ -264,7 +264,7 @@ InjectResult injectDll(DWORD pid, const std::wstring& dllPath, DWORD timeoutMs) 
                 result.alreadyLoaded = alreadyLoaded;
                 result.detail = alreadyLoaded
                     ? L"当前游戏进程已注入，并已验证本地解锁成功。"
-                    : L"代理已验证：普通饰品与全部扩展分类均已本地解锁。";
+                    : L"代理已验证：普通饰品与可用扩展分类已本地解锁。";
                 return;
             }
             if (status.rfind("FAILED", 0) == 0) {

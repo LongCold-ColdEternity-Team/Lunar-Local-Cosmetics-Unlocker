@@ -118,6 +118,29 @@ std::mutex g_logMutex;
 std::mutex g_resolutionLogMutex;
 std::set<std::string> g_loggedResolutions;
 std::atomic<unsigned long> g_tagSequence{1};
+std::atomic<bool> g_badgeRegisterRequested{false};
+
+enum class ExtraState {
+    Pending,
+    Unlocked,
+    Skipped,
+};
+
+const char* extraStateName(ExtraState state) {
+    switch (state) {
+    case ExtraState::Unlocked:
+        return "UNLOCKED";
+    case ExtraState::Skipped:
+        return "SKIPPED";
+    case ExtraState::Pending:
+    default:
+        return "PENDING";
+    }
+}
+
+bool extraStateComplete(ExtraState state) {
+    return state == ExtraState::Unlocked || state == ExtraState::Skipped;
+}
 
 struct EmoteSelection {
     jint id = 0;
@@ -2700,6 +2723,33 @@ bool unlockBadges(JNIEnv* env, jvmtiEnv* jvmti) {
     jobject catalog = env->CallObjectMethod(manager, getCatalog);
     if (clearException(env, "badge catalog") || !catalog) return false;
 
+    // Some client builds create the BadgeManager before its asynchronous
+    // badges.json registration has populated the catalog. Request that load
+    // once, then let the caller retry without blocking the main unlock path.
+    if (collectionSize(env, catalog) == 0) {
+        bool expected = false;
+        if (g_badgeRegisterRequested.compare_exchange_strong(expected, true)) {
+            jmethodID registerInstance = tryMethodByName(
+                env, managerClass, "register", "()V", false);
+            jmethodID registerStatic = registerInstance ? nullptr : tryMethodByName(
+                env, managerClass, "register", "()V", true);
+            if (registerInstance) {
+                env->CallVoidMethod(manager, registerInstance);
+            } else if (registerStatic) {
+                env->CallStaticVoidMethod(managerClass, registerStatic);
+            }
+            if (registerInstance || registerStatic) {
+                if (clearException(env, "badge register")) {
+                    logLine("BADGE_REGISTER_FAILED");
+                } else {
+                    logLine("BADGE_REGISTER_REQUESTED");
+                }
+            } else {
+                logLine("BADGE_REGISTER_UNAVAILABLE");
+            }
+        }
+    }
+
     jclass mapClass = env->FindClass("java/util/Map");
     jclass collectionClass = env->FindClass("java/util/Collection");
     jclass iteratorClass = env->FindClass("java/util/Iterator");
@@ -3155,14 +3205,16 @@ void runAgent() {
 
     if (!unlocked) logLine("UNLOCK_TIMEOUT reason=no_live_login_response_or_catalog");
 
-    bool emotesUnlocked = false;
-    bool jamsUnlocked = false;
-    bool spraysUnlocked = false;
-    bool badgesUnlocked = false;
-    bool lunarPlusUnlocked = false;
+    ExtraState emotesState = ExtraState::Pending;
+    ExtraState jamsState = ExtraState::Pending;
+    ExtraState spraysState = ExtraState::Pending;
+    ExtraState badgesState = ExtraState::Pending;
+    ExtraState lunarPlusState = ExtraState::Pending;
+    constexpr int kExtraSkipAfterAttempt = 15;
     for (int attempt = 1; attempt <= 90; ++attempt) {
-        const bool extrasComplete = emotesUnlocked && jamsUnlocked && spraysUnlocked &&
-            badgesUnlocked && lunarPlusUnlocked;
+        const bool extrasComplete = extraStateComplete(emotesState) &&
+            extraStateComplete(jamsState) && extraStateComplete(spraysState) &&
+            extraStateComplete(badgesState) && extraStateComplete(lunarPlusState);
         if (extrasComplete) break;
         if (env->PushLocalFrame(2048) != JNI_OK) {
             logLine("EXTRA_LOCAL_FRAME_FAILED");
@@ -3170,19 +3222,30 @@ void runAgent() {
         }
 
         const bool shouldProbe = attempt == 1 || attempt % 3 == 0;
-        if (shouldProbe && !emotesUnlocked) {
-            emotesUnlocked = unlockEmotes(env, jvmti);
+        auto updateExtra = [&](ExtraState& state, const char* category,
+                               bool unlocked) {
+            if (unlocked) {
+                state = ExtraState::Unlocked;
+            } else if (attempt >= kExtraSkipAfterAttempt) {
+                state = ExtraState::Skipped;
+                logLine("EXTRA_SKIP category=" + std::string(category) +
+                        " reason=retry_timeout");
+            }
+        };
+        if (shouldProbe && emotesState == ExtraState::Pending) {
+            updateExtra(emotesState, "emotes", unlockEmotes(env, jvmti));
         }
-        if (shouldProbe && !jamsUnlocked) {
-            jamsUnlocked = unlockJams(env, jvmti);
+        if (shouldProbe && jamsState == ExtraState::Pending) {
+            updateExtra(jamsState, "jams", unlockJams(env, jvmti));
         }
-        if (shouldProbe && !spraysUnlocked) {
-            spraysUnlocked = unlockSprays(env, jvmti);
+        if (shouldProbe && spraysState == ExtraState::Pending) {
+            updateExtra(spraysState, "sprays", unlockSprays(env, jvmti));
         }
-        if (shouldProbe && !badgesUnlocked) {
-            badgesUnlocked = unlockBadges(env, jvmti);
+        if (shouldProbe && badgesState == ExtraState::Pending) {
+            updateExtra(badgesState, "badges", unlockBadges(env, jvmti));
         }
-        if (shouldProbe && !lunarPlusUnlocked) {
+        if (shouldProbe && lunarPlusState == ExtraState::Pending) {
+            bool lunarPlusUnlocked = false;
             jclass responseClass = findLoadedClass(env, jvmti, kLoginResponseSignature);
             if (responseClass) {
                 std::vector<jobject> responses = findInstances(env, jvmti, responseClass);
@@ -3193,33 +3256,37 @@ void runAgent() {
                         g_hasSavedSelection ? g_savedSelection.lunarPlus : std::optional<jint>{});
                 }
             }
+            updateExtra(lunarPlusState, "lunar_plus", lunarPlusUnlocked);
         }
 
         if (attempt == 1 || attempt % 10 == 0 ||
-            (emotesUnlocked && jamsUnlocked && spraysUnlocked &&
-             badgesUnlocked && lunarPlusUnlocked)) {
+            (extraStateComplete(emotesState) && extraStateComplete(jamsState) &&
+             extraStateComplete(spraysState) && extraStateComplete(badgesState) &&
+             extraStateComplete(lunarPlusState))) {
             logLine("EXTRA_STATE attempt=" + std::to_string(attempt) +
-                    " emotes=" + std::to_string(emotesUnlocked) +
-                    " jams=" + std::to_string(jamsUnlocked) +
-                    " sprays=" + std::to_string(spraysUnlocked) +
-                    " badges=" + std::to_string(badgesUnlocked) +
-                    " lunar_plus=" + std::to_string(lunarPlusUnlocked));
+                    " emotes=" + extraStateName(emotesState) +
+                    " jams=" + extraStateName(jamsState) +
+                    " sprays=" + extraStateName(spraysState) +
+                    " badges=" + extraStateName(badgesState) +
+                    " lunar_plus=" + extraStateName(lunarPlusState));
         }
         env->PopLocalFrame(nullptr);
-        if (!(emotesUnlocked && jamsUnlocked && spraysUnlocked &&
-              badgesUnlocked && lunarPlusUnlocked)) {
+        if (!(extraStateComplete(emotesState) && extraStateComplete(jamsState) &&
+              extraStateComplete(spraysState) && extraStateComplete(badgesState) &&
+              extraStateComplete(lunarPlusState))) {
             Sleep(1000);
         }
     }
 
-    const bool extrasComplete = emotesUnlocked && jamsUnlocked && spraysUnlocked &&
-        badgesUnlocked && lunarPlusUnlocked;
+    const bool extrasComplete = extraStateComplete(emotesState) &&
+        extraStateComplete(jamsState) && extraStateComplete(spraysState) &&
+        extraStateComplete(badgesState) && extraStateComplete(lunarPlusState);
     logLine("EXTRA_COMPLETE success=" + std::to_string(extrasComplete) +
-            " emotes=" + std::to_string(emotesUnlocked) +
-            " jams=" + std::to_string(jamsUnlocked) +
-            " sprays=" + std::to_string(spraysUnlocked) +
-            " badges=" + std::to_string(badgesUnlocked) +
-            " lunar_plus=" + std::to_string(lunarPlusUnlocked));
+            " emotes=" + extraStateName(emotesState) +
+            " jams=" + extraStateName(jamsState) +
+            " sprays=" + extraStateName(spraysState) +
+            " badges=" + extraStateName(badgesState) +
+            " lunar_plus=" + extraStateName(lunarPlusState));
 
     if (env->PushLocalFrame(256) == JNI_OK) {
         bindLocalPlayerUuid(env, jvmti);
