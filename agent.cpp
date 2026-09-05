@@ -31,16 +31,6 @@ constexpr char kOwnedCosmeticDescriptor[] =
 constexpr char kCatalogCosmeticDescriptor[] =
     "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
     "HRCORCCCHOCRCICCRHOHHICOIIICII/HRCORCCCHOCRCICCRHOHHICOIIICII;";
-constexpr char kCosmeticTypeDescriptor[] =
-    "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
-    "HRCORCCCHOCRCICCRHOHHICOIIICII/RCRHHRIOICOORCIRCHOHHRHHIRRCRI;";
-constexpr char kItemMaterialDescriptor[] =
-    "Lcom/moonsworth/lunar/client/ORIHOIHRRIORROHIHHIIHOIHCCRHRI/"
-    "RCRROIORHICCOHOIIIRROHIORIIIHC/RCRROIORHICCOHOIIIRROHIORIIIHC/"
-    "HIIOHCCICCHRCHOROORICCRHIHOCOO;";
-constexpr char kOwnedMetadataDescriptor[] =
-    "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
-    "HRCORCCCHOCRCICCRHOHHICOIIICII/CIOCOHHRIIRCIROCHHICICRHICOHIH;";
 constexpr char kLocalCosmeticDescriptor[] =
     "Lcom/moonsworth/lunar/client/ICORCHCORIOIIIRCIRRHIHORICOIHH/"
     "HRCORCCCHOCRCICCRHOHHICOIIICII/COROIRIRHICROHCIOORRIOHCROCIHC;";
@@ -1079,16 +1069,15 @@ bool populateOwnedFromCatalog(JNIEnv* env, jvmtiEnv* jvmti, jobject manager) {
     }
 
     const std::string factoryDescriptor =
-        std::string("(ILjava/lang/String;") + kCosmeticTypeDescriptor +
-        "Ljava/lang/String;ZJLjava/time/Instant;Ljava/util/List;Ljava/util/List;Z" +
-        kItemMaterialDescriptor + kOwnedMetadataDescriptor + ")" + kOwnedCosmeticDescriptor;
+        std::string("(I)") + kOwnedCosmeticDescriptor;
     jmethodID factory = resolveMethod(
-        env, jvmti, managerClass, "RCRROIORHICCOHOIIIRROHIORIIIHC",
-        factoryDescriptor, false, "cosmetic_owned_factory");
+        env, jvmti, managerClass, "OIORROCCROCIOHRCIIRHCHCCIOIROC",
+        factoryDescriptor, false, "cosmetic_owned_by_id_factory");
     if (clearException(env, "direct manager methods") || !factory) {
         env->DeleteLocalRef(managerClass);
         return false;
     }
+    logLine("DIRECT_STAGE_FACTORY path=manager_by_id");
 
     ManagerCollections managerCollections = resolveManagerCollections(env, jvmti, manager);
     jobject catalog = managerCollections.catalog;
@@ -1104,14 +1093,12 @@ bool populateOwnedFromCatalog(JNIEnv* env, jvmtiEnv* jvmti, jobject manager) {
     jclass mapClass = env->FindClass("java/util/Map");
     jclass collectionClass = env->FindClass("java/util/Collection");
     jclass iteratorClass = env->FindClass("java/util/Iterator");
-    jclass optionalClass = env->FindClass("java/util/Optional");
     jclass hashSetClass = env->FindClass("java/util/HashSet");
     jclass hashMapClass = env->FindClass("java/util/HashMap");
-    jclass collectionsClass = env->FindClass("java/util/Collections");
     jclass longClass = env->FindClass("java/lang/Long");
     if (clearException(env, "direct Java collection classes") ||
-        !mapClass || !collectionClass || !iteratorClass || !optionalClass ||
-        !hashSetClass || !hashMapClass || !collectionsClass || !longClass) {
+        !mapClass || !collectionClass || !iteratorClass ||
+        !hashSetClass || !hashMapClass || !longClass) {
         env->DeleteLocalRef(catalog);
         env->DeleteLocalRef(targetOwned);
         env->DeleteLocalRef(targetSerials);
@@ -1134,19 +1121,14 @@ bool populateOwnedFromCatalog(JNIEnv* env, jvmtiEnv* jvmti, jobject manager) {
     jmethodID iteratorHasNext = env->GetMethodID(iteratorClass, "hasNext", "()Z");
     jmethodID iteratorNext = env->GetMethodID(
         iteratorClass, "next", "()Ljava/lang/Object;");
-    jmethodID optionalIsPresent = env->GetMethodID(optionalClass, "isPresent", "()Z");
-    jmethodID optionalGet = env->GetMethodID(optionalClass, "get", "()Ljava/lang/Object;");
     jmethodID hashSetCtor = env->GetMethodID(hashSetClass, "<init>", "()V");
     jmethodID hashMapCtor = env->GetMethodID(hashMapClass, "<init>", "()V");
-    jmethodID emptyListMethod = env->GetStaticMethodID(
-        collectionsClass, "emptyList", "()Ljava/util/List;");
     jmethodID longValueOf = env->GetStaticMethodID(
         longClass, "valueOf", "(J)Ljava/lang/Long;");
     if (clearException(env, "direct collection methods") ||
         !mapValues || !mapClear || !mapPutAll || !mapPut || !collectionIterator ||
         !collectionClear || !collectionAdd || !collectionAddAll || !iteratorHasNext ||
-        !iteratorNext || !optionalIsPresent || !optionalGet || !hashSetCtor ||
-        !hashMapCtor || !emptyListMethod || !longValueOf) {
+        !iteratorNext || !hashSetCtor || !hashMapCtor || !longValueOf) {
         env->DeleteLocalRef(catalog);
         env->DeleteLocalRef(targetOwned);
         env->DeleteLocalRef(targetSerials);
@@ -1156,11 +1138,10 @@ bool populateOwnedFromCatalog(JNIEnv* env, jvmtiEnv* jvmti, jobject manager) {
 
     jobject stagedOwned = env->NewObject(hashSetClass, hashSetCtor);
     jobject stagedSerials = env->NewObject(hashMapClass, hashMapCtor);
-    jobject emptyList = env->CallStaticObjectMethod(collectionsClass, emptyListMethod);
     jobject values = env->CallObjectMethod(catalog, mapValues);
     jobject iterator = values ? env->CallObjectMethod(values, collectionIterator) : nullptr;
     if (clearException(env, "direct staging setup") ||
-        !stagedOwned || !stagedSerials || !emptyList || !values || !iterator) {
+        !stagedOwned || !stagedSerials || !values || !iterator) {
         if (iterator) env->DeleteLocalRef(iterator);
         if (values) env->DeleteLocalRef(values);
         if (stagedOwned) env->DeleteLocalRef(stagedOwned);
@@ -1177,15 +1158,6 @@ bool populateOwnedFromCatalog(JNIEnv* env, jvmtiEnv* jvmti, jobject manager) {
     bool failed = false;
     jclass catalogClass = nullptr;
     jmethodID getId = nullptr;
-    jmethodID getName = nullptr;
-    jmethodID getType = nullptr;
-    jmethodID getResource = nullptr;
-    jfieldID resourceField = nullptr;
-    jmethodID getHidden = nullptr;
-    jmethodID getTags = nullptr;
-    jmethodID getColors = nullptr;
-    jmethodID getAnimated = nullptr;
-    jmethodID getMaterial = nullptr;
 
     while (env->CallBooleanMethod(iterator, iteratorHasNext) == JNI_TRUE) {
         if (clearException(env, "catalog iterator hasNext")) {
@@ -1207,91 +1179,29 @@ bool populateOwnedFromCatalog(JNIEnv* env, jvmtiEnv* jvmti, jobject manager) {
             catalogClass = static_cast<jclass>(env->NewGlobalRef(env->GetObjectClass(item)));
             getId = resolveMethod(env, jvmti, catalogClass, "getId", "()I", false,
                                   "catalog_id_getter");
-            getName = resolveMethod(env, jvmti, catalogClass, "getName",
-                                    "()Ljava/lang/String;", false,
-                                    "catalog_name_getter");
-            getType = resolveMethod(env, jvmti, catalogClass,
-                                    "IHCIHHCIOROIHRIORCIRHRHICHRORO",
-                                    "()Ljava/util/Optional;", false,
-                                    "catalog_type_getter");
-            getResource = tryMethodByName(
-                env, catalogClass, "COOOCICROIRHRCHCCHHHRHCRHOHHOI",
-                "()Ljava/lang/String;", false);
-            if (!getResource) {
-                resourceField = tryFieldByName(
-                    env, catalogClass, "resource", "Ljava/lang/String;", false);
-                if (resourceField) {
-                    logResolutionOnce("catalog_resource_field", "resource",
-                                      "Ljava/lang/String;");
-                }
-            }
-            getHidden = tryMethodByName(env, catalogClass,
-                                        "CIOROHCHHHHICORRHRIOCCCRCRHRIR", "()Z", false);
-            getColors = tryMethodByName(
-                env, catalogClass, "getColors", "()Ljava/util/List;", false);
-            getTags = tryMethodByName(env, catalogClass,
-                                      "RRHCHCCIRHRRROHOROHIRHRHIOHCHH",
-                                      "()Ljava/util/List;", false);
-            getAnimated = tryMethodByName(env, catalogClass,
-                                          "OCROCHROOCCOCOHOICHIHHORIIHROR",
-                                          "()Z", false);
-            const std::string materialGetter = std::string("()") + kItemMaterialDescriptor;
-            getMaterial = resolveMethod(env, jvmti, catalogClass,
-                                        "COOOHHHHHOOCCIIOOICHIOIHOOHRIR",
-                                        materialGetter, false,
-                                        "catalog_material_getter");
-            if (clearException(env, "catalog item methods") ||
-                !getId || !getName || !getType ||
-                (!getResource && !resourceField) || !getMaterial) {
+            if (clearException(env, "catalog item methods") || !getId) {
                 env->PopLocalFrame(nullptr);
                 failed = true;
                 break;
             }
         }
 
-        jobject typeOptional = env->CallObjectMethod(item, getType);
-        const jboolean hasType = typeOptional
-            ? env->CallBooleanMethod(typeOptional, optionalIsPresent)
-            : JNI_FALSE;
-        if (clearException(env, "catalog type optional")) {
+        const jint id = env->CallIntMethod(item, getId);
+        if (clearException(env, "catalog item id")) {
             env->PopLocalFrame(nullptr);
             failed = true;
             break;
         }
-        if (hasType != JNI_TRUE) {
+        jobject owned = env->CallObjectMethod(manager, factory, id);
+        if (clearException(env, "owned cosmetic by-id factory")) {
+            env->PopLocalFrame(nullptr);
+            failed = true;
+            break;
+        }
+        if (!owned) {
             ++skipped;
             env->PopLocalFrame(nullptr);
             continue;
-        }
-
-        const jint id = env->CallIntMethod(item, getId);
-        jobject name = env->CallObjectMethod(item, getName);
-        jobject type = env->CallObjectMethod(typeOptional, optionalGet);
-        jobject resource = getResource
-            ? env->CallObjectMethod(item, getResource)
-            : env->GetObjectField(item, resourceField);
-        const jboolean hidden = getHidden
-            ? env->CallBooleanMethod(item, getHidden) : JNI_FALSE;
-        jobject tags = getTags
-            ? env->CallObjectMethod(item, getTags) : env->NewLocalRef(emptyList);
-        jobject colors = getColors
-            ? env->CallObjectMethod(item, getColors) : env->NewLocalRef(emptyList);
-        const jboolean animated = getAnimated
-            ? env->CallBooleanMethod(item, getAnimated) : JNI_FALSE;
-        jobject material = env->CallObjectMethod(item, getMaterial);
-        if (clearException(env, "catalog item values")) {
-            env->PopLocalFrame(nullptr);
-            failed = true;
-            break;
-        }
-
-        jobject owned = env->CallObjectMethod(
-            manager, factory, id, name, type, resource, hidden, static_cast<jlong>(-1),
-            nullptr, tags, colors, animated, material, nullptr);
-        if (clearException(env, "owned cosmetic factory") || !owned) {
-            env->PopLocalFrame(nullptr);
-            failed = true;
-            break;
         }
 
         // Lunar indexes this collection by the cosmetic id (the first factory
@@ -1342,17 +1252,14 @@ bool populateOwnedFromCatalog(JNIEnv* env, jvmtiEnv* jvmti, jobject manager) {
     env->DeleteLocalRef(values);
     env->DeleteLocalRef(stagedOwned);
     env->DeleteLocalRef(stagedSerials);
-    env->DeleteLocalRef(emptyList);
     env->DeleteLocalRef(catalog);
     env->DeleteLocalRef(targetOwned);
     env->DeleteLocalRef(targetSerials);
     env->DeleteLocalRef(mapClass);
     env->DeleteLocalRef(collectionClass);
     env->DeleteLocalRef(iteratorClass);
-    env->DeleteLocalRef(optionalClass);
     env->DeleteLocalRef(hashSetClass);
     env->DeleteLocalRef(hashMapClass);
-    env->DeleteLocalRef(collectionsClass);
     env->DeleteLocalRef(longClass);
     env->DeleteLocalRef(managerClass);
     return stagingValid && !failed;

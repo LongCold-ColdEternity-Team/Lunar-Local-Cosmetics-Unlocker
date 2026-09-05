@@ -2,7 +2,11 @@
 
 开发者：ColdEternity Team
 
-当前版本：`v1.2.0`
+当前版本：`v1.3`
+
+## v1.3 更新
+
+- 修复注入成功后仅披风可以正常显示的问题：改用客户端自身的按 ID 饰品工厂，确保动画饰品生成正确的运行时类型，避免 `ClassCastException` 和后续 OpenGL 栈溢出。
 
 ## v1.2.0 更新
 
@@ -76,7 +80,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 - `bin\LunarUnlockInjector.exe`，命令行调试器
 - `dist\LunarUnlockUI.exe`，内嵌 DLL 的单文件 UI
 
-版本号统一定义在 `resource.h`，当前为 `1.2.0`。
+版本号统一定义在 `resource.h`，当前为 `1.3`。
 
 ## 二次修改与分发
 
